@@ -30,10 +30,10 @@ IJCAI 2023  [Doi](https://doi.org/10.24963/ijcai.2023/736); ArXiv [Doi](https://
 
 *Transformational systems and the algebraic structure of atomic formulas* \
 John C. Reynolds\
-Machine Intelligence 5 (1), pp. 135–151.                
+Machine Intelligence 5 (1), pp. 135–151. [pdf](https://www.cs.cmu.edu/afs/cs/user/jcr/ftp/transysalg.pdf)               
 
 *A note on inductive generalization* \
 Gordon D. Plotkin\
-Machine intelligence 5 (1), 153-163
+Machine intelligence 5 (1), 153-163. [pdf](https://homepages.inf.ed.ac.uk/gdp/publications/MI5_note_ind_gen.pdf)
 
  
