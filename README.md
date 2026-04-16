@@ -22,15 +22,15 @@ A previous version, available in the NASA PVS library, nasalib, part of the term
 
 *Verification of an Anti-unification Algorithm in PVS* \
 Mauricio Ayala-Rincón, Thaynara Arielly de Lima, Maria Júlia Dias Lima, Mariano M. Moscato, Temur Kutsia\
-NFM 2025: 54-71  [Doi](https://doi.org/10.1007/978-3-031-93706-4_4).\
+NFM 2025: 54-71  [Doi](https://doi.org/10.1007/978-3-031-93706-4_4). \
 
 *Anti-unification and Generalization: A Survey* \
 David M. Cerna and Temur Kutsia\
-[Doi](https://arxiv.org/pdf/2302.00277).\
+[Doi](https://arxiv.org/pdf/2302.00277). \
 
 *Transformational systems and the algebraic structure of atomic formulas* \
 John C. Reynolds\
-Machine Intelligence 5 (1), pp. 135–151.\               
+Machine Intelligence 5 (1), pp. 135–151. \               
 
 *A note on inductive generalization* \
 Gordon D. Plotkin\
