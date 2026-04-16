@@ -6,12 +6,12 @@ Contributors:
 
 * Thaynara Arielly de Lima  IME/UFG
 
-               * Marcos Mercandeli Rodrigues IE/UnB
+* Marcos Mercandeli Rodrigues PPGMAT/IE/UnB
 
-  * Maria Júlia Dias  IE/UnB
+* Maria Júlia Dias  PPGINF/IE/UnB
   
-               * Temur Kutsia  RISC/JKU 
+* Temur Kutsia  RISC/JKU 
 
-    * Mauricio Ayala-Rincon  IE/UnB-IME/UFG
+* Mauricio Ayala-Rincon  IE/UnB-IME/UFG
 
                
