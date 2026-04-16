@@ -2,7 +2,7 @@
 
 This repository includes the verification of a syntactic anti-unification functional algorithm in the Prototype Verification System.
 
-Contributors:  
+## Contributors:  
 
 * Thaynara Arielly de Lima  IME/UFG
 
@@ -13,5 +13,12 @@ Contributors:
 * Temur Kutsia  RISC/JKU 
 
 * Mauricio Ayala-Rincon  IE/UnB-IME/UFG
+
+## Previous version:
+
+A previous version, available in the NASA PVS library, nasalib, part of the term rewriting library can be found through the link  ()[]
+
+## References:
+
 
                
