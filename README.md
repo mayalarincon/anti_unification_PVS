@@ -4,10 +4,10 @@ This repository includes the verification of a syntactic anti-unification functi
 
 ## Contributors:  
 
-* Thaynara Arielly de Lima  IME/UFG\
-* Marcos Mercandeli Rodrigues PPGMAT/IE/UnB\
-* Maria Júlia Dias  PPGINF/IE/UnB\
-* Temur Kutsia  RISC/JKU\ 
+* Thaynara Arielly de Lima  IME/UFG
+* Marcos Mercandeli Rodrigues PPGMAT/IE/UnB
+* Maria Júlia Dias  PPGINF/IE/UnB
+* Temur Kutsia  RISC/JKU
 * Mauricio Ayala-Rincon  IE/UnB-IME/UFG
 
 ## Previous version:
