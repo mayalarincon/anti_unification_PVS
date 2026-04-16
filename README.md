@@ -27,7 +27,7 @@ NFM 2025: 54-71\
 
 *Anti-unification and Generalization: A Survey* \
 David M. Cerna and Temur Kutsia\
-[Doi](https://arxiv.org/pdf/2302.00277). 
+IJCAI 2023  [Doi](https://doi.org/10.24963/ijcai.2023/736); ArXiv [Doi](https://arxiv.org/pdf/2302.00277). 
 
 *Transformational systems and the algebraic structure of atomic formulas* \
 John C. Reynolds\
