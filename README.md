@@ -20,8 +20,13 @@ A previous version, available in the NASA PVS library, nasalib, part of the term
 
 ## References:
 
+Verification of an Anti-unification Algorithm in PVS
+Mauricio Ayala-Rincón, Thaynara Arielly de Lima, Maria Júlia Dias Lima, Mariano M. Moscato, Temur Kutsia:
+NFM 2025: 54-71  [Doi](https://doi.org/10.1007/978-3-031-93706-4_4)
 
-[A Survey on Anti-Unification](https://arxiv.org/pdf/2302.00277)
+Anti-unification and Generalization: A Survey
+[Doi](https://arxiv.org/pdf/2302.00277)
+David M. Cerna and Temur Kutsia
 
 Transformational systems and the algebraic structure of atomic formulas 
 John C. Reynolds
