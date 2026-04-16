@@ -1,4 +1,4 @@
-# anti_unification_PVS
+# Anti-unification in PVS
 
 This repository includes the verification of a syntactic anti-unification functional algorithm in the Prototype Verification System.
 
