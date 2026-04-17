@@ -1,0 +1,1264 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%  Properties of Substitutions (Antiunify th) %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Mariano Miguel Moscato             AMA/NASA LaRC Formal Methods
+% Maria Julia Dias Lima              Universidade de Brasilia
+% Mauricio Ayala-Rincon              Universidade de Brasilia
+% Temur Kutsia                       RISC/Johannes Kepler Universitaet Linz
+% Thaynara Arielly de Lima           Universidade Federal de Goias
+% Gabriel Ferreira Silva             Universidade de Brasilia
+% Marcos Mercandeli-Rodrigues        Universidade de Brasilia
+%
+%    Last modified 17th April, 2026
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+first_order_substitution: THEORY
+BEGIN
+	IMPORTING 
+          first_order_terms_properties
+
+a, i, j, n, k, inc, start: VAR nat
+X, Y, Z, Z_: VAR variable
+t, t1, t2, s, ti, arg: VAR first_order_term
+args, args1, args2: VAR args
+lst_args: VAR list[args]
+
+set_vars, set_vars1, V1, V1_: VAR finite_set[variable]
+fin_set_t: VAR finite_set[first_order_term]
+lst_V, lst_V_: VAR list[variable]
+
+f: VAR f_symbol
+coef: VAR list[nat]
+
+% a basic substitution is one of the form {variable->term}, as in X->s
+basic_sub: TYPE = [variable, first_order_term]
+sigma_basic: VAR basic_sub
+
+% applies the substitution X -> s in the term t
+subs(sigma_basic, t): RECURSIVE first_order_term =
+    LET X = sigma_basic`1,
+    	s = sigma_basic`2
+	IN CASES t OF
+           const(a): const(a),
+	   variable(Y): IF X = Y THEN s
+		     	ELSE variable(Y)
+		     	ENDIF,
+	   unit: unit,
+	   pair(t1, t2): pair(subs(sigma_basic, t1), subs(sigma_basic, t2)),
+	   app(f, arg): app(f, subs(sigma_basic, arg))
+    ENDCASES
+MEASURE t by <<
+
+% A substitution is represented as a list of basic substitutions
+% This way the composition of substitutions sigma and delta, represented in math as
+% "(sigma o delta)" can be implemented as "append(sigma, delta)".
+sub: TYPE = list[basic_sub]  
+
+sigma, sigma1, delta, delta1, delta2, lambda1, gamma: VAR sub
+
+% action of a substitution sigma on a term t.
+% notice that in "(sigma o delta)(t) = sigma(delta(t))" we apply the substitution delta first,
+% and the substitution sigma after. Since "(sigma o delta)(t)" is represented as
+% "append(sigma, delta)", we must apply first the basic substitution in the tail of the list
+subs(sigma)(t): RECURSIVE first_order_term =
+    CASES sigma OF       
+    	  null: t,
+	  cons(head, tail): subs(head, subs(tail)(t))
+    ENDCASES
+MEASURE sigma BY << 
+
+% action of a substitution on a variable
+subs(sigma)(X): first_order_term = subs(sigma)(variable(X))
+
+% apply substitution to a list of terms
+subs(sigma)(args): RECURSIVE args =
+    IF null?(args) THEN null
+    ELSE LET t = car(args) IN cons(subs(sigma)(t), subs(sigma)(cdr(args)))
+    ENDIF
+MEASURE args BY << 
+
+% apply substitution to a list of terms
+subs(sigma)(fin_set_t): finite_set[first_order_term] = 
+    {t | EXISTS s: member(s, fin_set_t) AND t = subs(sigma)(s)}
+
+% define when two substitutions are equal
+equal?(sigma, delta): bool =
+    FORALL X: subs(sigma)(X) = subs(delta)(X)
+
+% equality between substitutions restricted to variables in "set_vars"
+equal?(sigma, delta, set_vars): bool =
+    FORALL X:
+       member(X, set_vars) IMPLIES
+          subs(sigma)(X) = subs(delta)(X)
+
+equal_syn?(sigma, delta, set_vars): bool = 
+    FORALL X: member(X, set_vars) IMPLIES subs(sigma)(X) = subs(delta)(X)
+
+% define when delta is more general than sigma
+more_general?(delta, sigma): bool = 
+    EXISTS delta2: equal?(sigma, append(delta2, delta))
+
+more_general?(delta, sigma, set_vars): bool = 
+    EXISTS delta2: equal?(sigma, append(delta2, delta), set_vars)
+
+% a superset of the domain of a substitution sigma
+supset_dom(sigma): RECURSIVE finite_set[variable] =    
+    IF null?(sigma) THEN emptyset
+    ELSE LET X = car(sigma)`1 IN add(X, supset_dom(cdr(sigma)))
+    ENDIF
+MEASURE sigma BY << 
+
+% if subs(sigma)(X) /= variable(X) then member(X, supset_dom(sigma))
+% needed for the TCC of dom
+supset_dom_correct: LEMMA
+   subs(sigma)(X) /= variable(X) IMPLIES member(X, supset_dom(sigma))
+
+% domain of a substitution
+dom(sigma): finite_set[variable] = {X | subs(sigma)(X) /= variable(X)}
+
+supset_dom_correct2: LEMMA
+    subset?(dom(sigma), supset_dom(sigma))
+
+% image of a substitution 
+img(sigma): finite_set[first_order_term] = {t | EXISTS X: member(X, dom(sigma)) AND subs(sigma)(X) = t} 
+
+idempotent?(sigma): bool = 
+   FORALL X: subs(sigma)(subs(sigma)(X)) = subs(sigma)(X)
+
+nice?(sigma): RECURSIVE bool = 
+    IF null?(sigma) THEN TRUE 
+    ELSE LET (X, t) = car(sigma) IN
+         (NOT member(X, vars(t)) AND NOT member(X, supset_dom(cdr(sigma))) AND
+	  disjoint?(vars(t), supset_dom(cdr(sigma))) AND nice?(cdr(sigma)))
+    ENDIF
+MEASURE sigma BY <<
+
+contained?(delta, set_vars): bool = 
+    subset?(dom(delta), set_vars) AND subset?(vars(img(delta)), set_vars)
+
+% image of restriction
+img(sigma)(V: finite_set[variable] | subset?(V,dom(sigma))): finite_set[first_order_term] = { t | EXISTS X: member(X, (V)) AND subs(sigma)(X) = t }
+
+img_restrict_correct: LEMMA
+   img(sigma)(dom(sigma)) = img(sigma)
+
+img_restrict_subset: LEMMA
+   FORALL(U: finite_set[variable] | subset?(U, dom(sigma)), V: finite_set[variable] | subset?(V, dom(sigma))):
+      subset?(U, V) IMPLIES subset?(img(sigma)(U), img(sigma)(V))
+
+img_restrict_subset_full: COROLLARY
+   FORALL(V: finite_set[variable] | subset?(V, dom(sigma))):
+      subset?(img(sigma)(V), img(sigma))
+
+% Pre-image
+Pre_img(sigma)(t): finite_set[variable] = { X | member(X, dom(sigma)) AND subs(sigma)(X) = t }
+
+Pre_img_maps_to_img: COROLLARY
+   FORALL(X: variable, t: first_order_term,  sigma: sub):
+      member(X, Pre_img(sigma)(t)) IMPLIES member(t, img(sigma))
+
+% creates a substitution {X_start -> X_start + inc, ..., X_{start + n} -> X_{start + n} + inc}
+shift(start, n, inc): RECURSIVE sub = 
+   IF n = 0 THEN cons((start, variable(start + inc)), null)
+   ELSE cons((start, variable(start + inc)), shift(start+1, n-1, inc))
+   ENDIF
+MEASURE n 
+
+% wrapper for the function below
+% should be called with select_greater(lst_V_) >= select_greater(lst_V)
+shift(lst_V, lst_V_, n): sub = 
+   LET Z = select_greater[nat](lst_V), Z_ = select_greater[nat](lst_V_) IN  
+   IF Z > Z_ THEN null 
+   ELSE LET inc = Z_ - Z IN shift(Z+1, n, inc)
+   ENDIF 
+
+shift(V1, V1_, n): sub = shift(finset2list(V1), finset2list(V1_), n)
+
+% a renaming sigma always instantiates a variable to a variable and
+% is injective for the variables in the domain.  
+renaming?(sigma): bool =
+   (FORALL t: member(t, img(sigma)) IMPLIES var?(t)) AND 
+   (FORALL X, Y:
+    member(X, dom(sigma)) AND member(Y, dom(sigma)) AND 
+    subs(sigma)(X) = subs(sigma)(Y) IMPLIES X = Y)
+
+% definition of a renaming
+renaming: TYPE = {sigma: sub | renaming?(sigma)}
+rho: VAR renaming
+
+%%%%%%%%%%%%%%%%%%% Theorems
+% substitution and their effects on the terms
+subs_const: LEMMA
+    subs(sigma)(const(a)) = const(a)
+
+subs_unit: LEMMA
+    subs(sigma)(unit) = unit 
+   
+subs_pair: LEMMA
+    subs(sigma)(pair(t, s)) = pair(subs(sigma)(t), subs(sigma)(s))
+
+subs_app: LEMMA
+    subs(sigma)(app(f, arg)) = app(f, subs(sigma)(arg))
+
+subs_var: LEMMA
+    var?(subs(sigma)(t)) IMPLIES var?(t) 
+    
+subs_const2: LEMMA 
+    const?(subs(sigma)(t)) IMPLIES (const?(t) OR var?(t))
+
+%%%%
+subs_unit2: LEMMA 
+    unit?(subs(sigma)(t)) IMPLIES (unit?(t) OR var?(t))
+%%%%
+
+subs_pair2: LEMMA
+    pair?(subs(sigma)(t)) IMPLIES (pair?(t) OR var?(t))
+
+subs_app2: LEMMA
+    app?(subs(sigma)(t)) IMPLIES (app?(t) OR var?(t))
+
+subs_func: LEMMA
+    app?(subs(sigma)(t)) IMPLIES (same_func?(subs(sigma)(t), t) OR var?(t))
+
+subs_ord: LEMMA
+    t = subs(sigma)(s) IMPLIES (ord(t) = ord(s) OR (var?(s) AND member(V(s), dom(sigma))))
+
+subs_mem: LEMMA  
+    member(t, subs(sigma)(args)) IFF
+    EXISTS s:
+       member(s, args) AND t = subs(sigma)(s)
+
+subs_len: LEMMA
+    length(subs(sigma)(args)) = length(args)
+
+subs_append: LEMMA
+    subs(sigma)(append(args1, args2)) = append(subs(sigma)(args1), subs(sigma)(args2))
+    
+subs_append2: LEMMA
+    subs(append(sigma, delta))(t) = subs(sigma)(subs(delta)(t))
+    
+subs_map: LEMMA
+    map(subs(sigma))(args) = subs(sigma)(args)
+
+subs_append_args: LEMMA 
+    subs(append(sigma, delta))(args) = subs(sigma)((subs(delta))(args))
+
+subs_map_append_lst_args: LEMMA 
+    map(subs(append(sigma, delta)))(lst_args) = map(subs(sigma))(map(subs(delta))(lst_args))
+
+subs_cons: LEMMA 
+    subs(cons((X, t), delta))(args1) = subs(cons((X, t), null))(subs(delta)(args1))
+
+subs_equal?: LEMMA
+    t = s  IMPLIES
+    subs(sigma)(t) =  subs(sigma)(s)
+
+% domain and img of a substitution lemma
+vars_subs_t: LEMMA
+    subset?(vars(subs(sigma)(t)), union(vars(img(sigma)), vars(t)))
+
+vars_subs_t2: LEMMA
+   subset?(vars(t), dom(sigma)) IMPLIES subset?(vars(subs(sigma)(t)), vars(img(sigma)))
+
+basic_sub_no_effect: LEMMA
+    NOT member(X, vars(t)) IMPLIES subs((X, s), t) = t
+
+basic_sub_elim_var: LEMMA
+    NOT member(X, vars(s)) IMPLIES NOT member(X, vars(subs((X, s), t)))
+
+basic_sub_not_elim_var: LEMMA
+    X /= Y AND NOT member(Y, vars(s)) AND member(Y, vars(subs((X, s), t))) IMPLIES member(Y, vars(t))
+
+dom_basic_sub: LEMMA
+    dom(cons((X, t), null)) = singleton(X) OR member(X, vars(t))
+
+dom_basic_sub2: LEMMA  
+    dom(cons((X, t), null)) = singleton(X) OR dom(cons((X, t), null)) = emptyset
+
+dom_null: LEMMA
+    dom(null) = emptyset
+
+dom_append: LEMMA
+    subset?(dom(append(delta, sigma)), union(dom(delta), dom(sigma)))
+
+img_basic_sub: LEMMA
+    img(cons((X, t), null)) = singleton(t) OR member(X, vars(t)) 
+
+img_null: LEMMA
+    img(null) = emptyset
+
+subs_no_effect_t: LEMMA
+    disjoint?(dom(sigma), vars(t)) IMPLIES subs(sigma)(t) = t
+
+subs_no_effect_t_var: LEMMA
+   NOT member(X, dom(sigma)) IMPLIES subs(cons((X,t),sigma))(X) = t
+
+subs_no_effect_t_var2: COROLLARY
+   NOT member(X, union(dom(delta), dom(sigma))) AND
+      disjoint?(dom(delta), vars(t)) IMPLIES
+         subs(append(delta, cons((X, t), sigma)))(X) = t
+
+%This result "disjunct_binding_invariance" might be useful when dealing with solve in completeness:
+disjunct_binding_invariance: LEMMA
+   NOT member(Y, union(union(dom(sigma), vars(img(sigma))), union(set_vars, vars(t)))) IMPLIES
+      subs(sigma)(t) = subs(cons[basic_sub]((Y, subs(sigma)(X)), append(sigma, cons[basic_sub]((X, variable(Y)), null[basic_sub]))))(t)
+
+%This result is used for variables in image of substitutions:
+variable_action_not_member: LEMMA
+   NOT member(X, vars(s)) IMPLIES NOT member(X, vars(subs((X, s), t)))
+
+variable_must_be_preserved: LEMMA
+   member(Y, vars(subs((X, s), t))) AND NOT X = Y AND NOT member(X, vars(t)) IMPLIES member(Y, vars(t))
+
+variable_must_be_preserved2: LEMMA
+   member(X, vars(subs((Y, s), t))) AND NOT X = Y AND NOT member(X, vars(s)) IMPLIES member(X, vars(t))
+
+variable_does_not_occur: LEMMA
+   NOT member(X, vars(t)) AND NOT X = Y AND NOT member(X, vars(s)) IMPLIES NOT member(X, vars(subs((Y, s), t)))
+
+different_variable_is_preserved: LEMMA
+   member(Y, vars(t)) AND NOT X = Y IMPLIES member(Y, vars(subs((X, s), t)))
+
+%More results used for variables in image
+label_cannot_happen_in_image_lateral_subs: LEMMA
+   NOT member(X, vars(t)) AND
+      NOT member(X, vars(img(sigma))) IMPLIES
+         NOT member(X, vars(subs(sigma)(t)))
+
+fresh_variable_not_in_terms_range: LEMMA
+   NOT member(X, vars(t)) AND
+      NOT member(X, vars(img(sigma))) IMPLIES
+         NOT member(X, vars(subs(sigma)(t)))
+
+dom_append2: LEMMA  
+    disjoint?(vars(img(sigma)), dom(delta)) AND disjoint?(dom(delta), dom(sigma)) IMPLIES 
+    dom(append(delta, sigma)) = union(dom(delta), dom(sigma))
+
+dom_append3 : LEMMA
+     NOT member(X, union(vars(t),supset_dom(sigma))) AND
+     empty?(intersection(vars(t),union(supset_dom(sigma),vars(img(sigma))))) IMPLIES
+     LET sigma_p = cons((X,t),sigma) in 
+     dom(sigma_p) = union(singleton(X), dom(sigma))
+
+subs_no_effect_args: LEMMA  
+    disjoint?(dom(sigma), vars(args)) IMPLIES subs(sigma)(args) = args
+
+apply_sub_elim_var_t: LEMMA
+    member(X, dom(sigma)) AND NOT member(X, vars(img(sigma))) 
+    IMPLIES NOT member(X, vars(subs(sigma)(t)))
+
+vars_img_append: LEMMA
+    subset?(vars(img(append(delta, sigma))), union(vars(img(delta)), vars(img(sigma))))
+
+vars_subs_img: LEMMA
+    subset?(vars(t), dom(sigma)) IMPLIES
+    subset?(vars(subs(sigma)(t)), vars(img(sigma)))
+
+%This result "nice_implies_dom_equals_supset_dom" might be useful when dealing with nice substitutions:
+nice_implies_dom_equals_supset_dom: LEMMA
+    nice?(sigma) IMPLIES supset_dom(sigma) = dom(sigma)
+
+%The converse of the previous lemma is not true: Take for instance σ := [X |-> f(Y)][Y |-> Z]. It holds
+%that supset_dom(σ) = dom(σ), but σ is not nice.
+
+% idempotent and properties of substitutios
+idempotent_null: LEMMA 
+    idempotent?(null[basic_sub]) 
+
+var_dom_sub_dif_term: LEMMA
+    member(X, vars(t)) AND member(X, dom(sigma)) IMPLIES
+    subs(sigma)(t) /= t
+   
+idempotent_disjoint_dom_img: LEMMA
+    idempotent?(sigma) IMPLIES disjoint?(dom(sigma), vars(img(sigma)))
+
+idempotent_disjoint_dom_img2: LEMMA
+    disjoint?(dom(sigma), vars(img(sigma))) IMPLIES idempotent?(sigma)
+
+apply_sub_elim_var_t2: LEMMA
+    member(X, dom(sigma)) AND idempotent?(sigma) IMPLIES NOT member(X, vars(subs(sigma)(t)))
+
+subs_singleton: LEMMA
+    subs(sigma)(singleton(t)) = singleton(subs(sigma)(t))
+
+img_append_subset: LEMMA
+    subset?(img(append(sigma, delta)), union(image(subs(sigma))(img(delta)), img(sigma)))
+
+img_preservation: LEMMA
+    member(t, img(sigma)) AND disjoint?(dom(delta), vars(t)) IMPLIES
+    member(t, img(append(delta, sigma)))
+
+img_preservation_basic_subs: COROLLARY
+    member(t, img(sigma)) AND NOT member(X, vars(t)) IMPLIES
+    member(t, img(cons((X,s), sigma)))
+
+idempotent_append: LEMMA
+    idempotent?(sigma) AND idempotent?(delta) AND
+    disjoint?(dom(delta), vars(img(sigma))) IMPLIES
+    idempotent?(append(sigma, delta)) 
+
+idempotent_subs_subs_t: LEMMA
+    idempotent?(sigma) IMPLIES subs(sigma)(subs(sigma)(t)) = subs(sigma)(t) 
+    
+subs_divide_not_var: LEMMA
+    NOT var?(subs(sigma)(X)) IMPLIES
+    EXISTS delta, delta2, sigma_basic, Y: 
+        sigma = append(delta, cons(sigma_basic, delta2)) AND
+	subs(delta2)(X) = variable(Y) AND sigma_basic`1 = Y AND NOT var?(sigma_basic`2)
+
+basic_sub_info: LEMMA
+   LET sigma = cons((X, t), null) IN 
+   NOT member(X, vars(t)) IMPLIES dom(sigma) = singleton(X) AND img(sigma) = singleton(t)
+   AND idempotent?(sigma)
+
+% subterms, same_func, im_under
+subterms_subs: LEMMA
+    subset?(subterms(subs(sigma)(t)),
+            union(image(subs(sigma))(subterms(t)), subterms(img(sigma))))
+    
+subs_no_effect_subterm: LEMMA
+    subs(sigma)(t) = t AND member(s, subterms(t)) IMPLIES subs(sigma)(s) = s
+
+subterms_img_append: LEMMA
+    subset?(subterms(img(append(sigma, delta))),
+    	    union(image(subs(sigma))(subterms(img(delta))), subterms(img(sigma))))
+
+same_func_subs: LEMMA
+    app?(t) IMPLIES same_func?(t, subs(sigma)(t))
+
+func_subterms_subs: LEMMA
+    func?(s) AND member(s, subterms(subs(sigma)(t))) IMPLIES
+    ((EXISTS ti: 
+         same_func?(ti, s) AND subs(sigma)(ti) = s AND member(ti, subterms(t)))
+     OR
+     member(s, subterms(img(sigma))))
+
+% nice, supset_dom, well_formed
+supset_dom_equiv: LEMMA
+    member(X, supset_dom(delta)) IFF EXISTS t: member((X, t), delta)
+
+supset_dom_append: LEMMA
+    supset_dom(append(sigma, delta)) = union(supset_dom(sigma), supset_dom(delta))
+
+no_effect_subs_structure_app  : LEMMA
+                      NOT member(Y, union(vars(t), union(dom(sigma), vars(img(sigma))))) AND
+                      subs(sigma)(X) = app(f, arg)
+		      IMPLIES                    
+		      subs(cons((Y, arg),
+		           append(sigma, cons((X, app(f, variable(Y))),null))))(t) = subs(sigma)(t)
+
+no_effect_subs_structure_pair  : LEMMA disjoint?(union(singleton(Y),singleton(Z)), union(vars(t), union(dom(sigma), vars(img(sigma))))) AND
+                      subs(sigma)(X) = pair(t1,t2) AND NOT Y = Z
+		      IMPLIES
+		      subs(cons((Z, t2), cons((Y, t1), append(sigma, cons((X, pair(variable(Y), variable(Z))),null)))))(t) = subs(sigma)(t)
+
+nice_disjoint_dom_img: LEMMA
+    nice?(sigma) IMPLIES disjoint?(dom(sigma), vars(img(sigma)))
+
+nice_disjoint_dom_img2:  LEMMA
+     FORALL(sigma : (nice?), X, t): member(X,dom(sigma)) AND member(t,img(sigma)) IMPLIES
+         NOT member(X, vars(t))
+
+nice_idempotent: LEMMA
+    nice?(sigma) IMPLIES idempotent?(sigma)
+
+nice_append: LEMMA
+    nice?(append(sigma, delta)) IMPLIES nice?(sigma) AND nice?(delta)
+
+%These results are useful for renaming variables:
+subs_adds_img_as_subterm : LEMMA
+  vars(s)(X) IMPLIES subterm(subs(sigma)(X), subs(sigma)(s))
+
+subs_adds_var_as_subterm : COROLLARY
+  vars(s)(X) AND subs(sigma)(X) = variable(Y) IMPLIES vars(subs(sigma)(s))(Y)
+
+%These results might be useful when dealing with nice append of substitutions:
+nice_append_supset_dom_disjoint: LEMMA
+    nice?(append(sigma, delta)) IMPLIES disjoint?(supset_dom(sigma), supset_dom(delta))
+
+nice_append_dom_disjoint: COROLLARY
+    nice?(append(sigma, delta)) IMPLIES disjoint?(dom(sigma), dom(delta))
+
+nice_append_union_dom: COROLLARY
+    nice?(append(sigma, delta)) IMPLIES dom(append(sigma, delta)) = union(dom(sigma), dom(delta))
+
+%The following might be useful for proving results on variables at a later moment.
+nice_append_action: LEMMA
+   dom(sigma) = vars(img(delta)) AND nice?(append(sigma, delta)) AND member(t, img(delta)) IMPLIES member(subs(sigma)(t), img(append(sigma, delta)))
+
+nice_append_action_converse: LEMMA
+   dom(sigma) = vars(img(delta)) AND nice?(append(sigma, delta)) AND member(t, img(append(sigma, delta))) AND NOT member(t, img(sigma)) IMPLIES EXISTS(s: first_order_term): member(s, img(delta)) AND t = subs(sigma)(s)
+
+renaming_effect_var_img: LEMMA
+    renaming?(sigma) AND dom(sigma) = vars(img(delta)) AND nice?(append(sigma, delta)) IMPLIES vars(img(append(sigma, delta))) = vars(img(sigma))
+
+%The following might be useful for proving results on variables at a later moment as well.
+add_disjoint_basic_subs_constants_unit: LEMMA
+   (const?(s) OR unit?(s)) IMPLIES vars(img(cons((X, s), sigma))) = remove(X, vars(img(sigma)))
+
+add_the_same_var_changes_nothing: LEMMA
+   var?(s) IMPLIES subs((V(s), s), t) = t
+
+add_disjoint_basic_subs_var: LEMMA
+   var?(s) AND dom(cons((X, s), sigma)) = add(X, dom(sigma)) AND NOT member(X, dom(sigma)) AND NOT member(V(s), dom(sigma)) IMPLIES vars(img(cons((X, s), sigma))) = add(V(s), remove(X, vars(img(sigma))))
+
+nice_append2: LEMMA
+    nice?(delta) AND nice?(sigma) AND
+    (FORALL X, t: member((X, t), sigma) IMPLIES
+    NOT member(X, supset_dom(delta)) AND
+        disjoint?(vars(t), supset_dom(delta)))
+    IMPLIES nice?(append(sigma, delta))
+
+nice_append_supset_dom: LEMMA
+   nice?(append(sigma, delta)) AND member(X, supset_dom(sigma)) IMPLIES
+   NOT member(X, supset_dom(delta))
+
+niceness_preservation : LEMMA
+     FORALL (sigma : (nice?)) : 
+     NOT member(X, union(vars(t),supset_dom(sigma))) AND
+     empty?(intersection(vars(t),union(supset_dom(sigma),vars(img(sigma))))) IMPLIES
+     LET sigma_p = cons((X,t),sigma) in 
+     nice?(sigma_p)
+
+nice_basic_sub_append: LEMMA
+   LET sigma_p = cons((X,t),sigma) in 
+     nice?(sigma_p) IMPLIES
+    dom(sigma_p) = union(singleton(X), dom(sigma))
+
+subs_dom_img(sigma)(V : finite_set[variable] | subset?(V, dom(sigma)) ) :
+RECURSIVE  sub =
+  IF empty?(V) THEN null
+  ELSE cons((choose(V), subs(sigma)(choose(V))), subs_dom_img(sigma)(rest[variable](V)))
+  ENDIF
+MEASURE card(V)
+
+subs_dom_img_supset_dom : LEMMA
+   FORALL(V:finite_set[variable]) : subset?(V, dom(sigma)) IMPLIES supset_dom(subs_dom_img(sigma)(V)) = V
+
+subs_dom_img_dom_subset: COROLLARY
+   FORALL(V:finite_set[variable]) : subset?(V, dom(sigma)) IMPLIES subset?(dom(subs_dom_img(sigma)(V)), V)
+
+disjoint_dom_im_delta: LEMMA
+   FORALL(V: finite_set[variable] | subset?(V, dom(sigma))) :
+      disjoint?(V, vars(img(sigma)(V))) IMPLIES
+          nice?(subs_dom_img(sigma)(V))
+
+subs_dom_img_niceness: COROLLARY
+   FORALL(V: finite_set[variable]): subset?(V, dom(sigma)) AND 
+      disjoint?(dom(sigma), vars(img(sigma))) IMPLIES nice?(subs_dom_img(sigma)(V))
+
+subs_dom_img_dom_equals_V: COROLLARY
+   FORALL(V:finite_set[variable] | subset?(V, dom(sigma))): 
+      disjoint?(V, vars(img(sigma)(V))) IMPLIES
+      dom(subs_dom_img(sigma)(V)) = V
+
+subs_dom_img_dom: COROLLARY
+   FORALL(V:finite_set[variable]): subset?(V,dom(sigma)) AND 
+      disjoint?(dom(sigma), vars(img(sigma))) IMPLIES
+      dom(subs_dom_img(sigma)(V)) = V
+
+subs_dom_img_equality_general: LEMMA
+   FORALL(V: finite_set[variable]): subset?(V,dom(sigma)) AND 
+      disjoint?(V, vars(img(sigma)(V))) IMPLIES
+      equal?(sigma, subs_dom_img(sigma)(V), V)
+
+subs_dom_img_equality: COROLLARY
+   FORALL(V:finite_set[variable]) : subset?(V,dom(sigma)) AND 
+      disjoint?(dom(sigma), vars(img(sigma))) IMPLIES
+      equal?(sigma,subs_dom_img(sigma)(V), V)
+
+disjoint_dom_im_ext_nice_general: COROLLARY	
+   FORALL(V:finite_set[variable] | subset?(V, dom(sigma))):
+      disjoint?(V, vars(img(sigma)(V))) IMPLIES
+      EXISTS(sigma_p:(nice?)): equal?(sigma, sigma_p, V)
+
+disjoint_dom_im_ext_nice: LEMMA
+      disjoint?(dom(sigma), vars(img(sigma))) IMPLIES
+      EXISTS(sigma_p:(nice?)): equal?(sigma, sigma_p)
+
+subs_dom_img_vars_img: LEMMA
+   FORALL(V: finite_set[variable]): subset?(V,dom(sigma)) AND 
+      disjoint?(V, vars(img(sigma)(V))) IMPLIES
+      vars(img(subs_dom_img(sigma)(V))) = vars(img(sigma)(V))
+
+subs_dom_img_terms: LEMMA
+   FORALL(V: finite_set[variable] | subset?(V, dom(sigma))): 
+      disjoint?(V, vars(img(sigma)(V))) AND subset?(vars(t), V) IMPLIES
+         subs(sigma)(t) = subs(subs_dom_img(sigma)(V))(t)
+
+IMPORTING list_aux_equational_reasoning2parameters[variable, first_order_term]
+
+vars_img_sec_proj: LEMMA
+   subset?(vars(img(sigma)), vars(sec_proj(sigma)))
+
+% equality between substitutions
+equal_sub_equiv: LEMMA
+   equal?(delta, sigma) IMPLIES (subs(delta)(t) = subs(sigma)(t))
+
+equal_sub_equiv_alt: LEMMA 
+   equal?(delta, sigma, set_vars) AND subset?(vars(t), set_vars) IMPLIES 
+   subs(delta)(t) =  subs(sigma)(t)
+
+equal_sub_change_eq_terms: LEMMA
+   equal?(delta, sigma) IMPLIES  
+   ((subs(delta)(t) = subs(delta)(s)) IFF (subs(sigma)(t) = subs(sigma)(s)))
+
+equal_sub_ref: LEMMA equal?(sigma, sigma) 
+
+equal_sub_sym: LEMMA 
+   equal?(delta, gamma) = equal?(gamma, delta)
+
+equal_sub_trans: LEMMA 
+   equal?(delta, gamma) AND equal?(gamma, sigma) IMPLIES equal?(delta, sigma) 
+
+equal_sub_append: LEMMA 
+   equal?(sigma, sigma1) IMPLIES equal?(append(sigma, delta), append(sigma1, delta))
+
+% equality between substitutions restricted to a set:
+equal_sub_subset: LEMMA 
+   equal?(sigma, sigma1, set_vars) AND subset?(set_vars1, set_vars) IMPLIES
+   equal?(sigma, sigma1, set_vars1) 
+
+equal_sub_res_trans: LEMMA 
+   equal?(delta, gamma, set_vars) AND equal?(gamma, sigma, set_vars) IMPLIES
+   equal?(delta, sigma, set_vars) 
+
+equal_sub_res_append: LEMMA 
+   equal?(sigma, sigma1, set_vars) IMPLIES
+   equal?(append(delta, sigma), append(delta, sigma1), set_vars)
+
+% syntactic equality between substitutions
+equal_syn_t: LEMMA 
+   equal_syn?(sigma, sigma1, vars(t)) IMPLIES subs(sigma)(t) = subs(sigma1)(t) 
+ 
+% this lemmas appeared when proving correctness and completeness
+idempotent_append_cond: LEMMA
+   idempotent?(sigma) AND NOT member(X, vars(t)) AND NOT member(X, dom(sigma))
+   AND disjoint?(vars(t), dom(sigma))
+   IMPLIES idempotent?(append(cons((X, t), null), sigma))
+
+%% contained, more_general
+subs_inst: LEMMA 
+    LET delta = cons((X, t), null) IN 
+    (subs(sigma)(variable(X)) = subs(sigma)(t)) IMPLIES 
+    equal?(sigma, append(sigma, delta))
+
+contained_append: LEMMA 
+    contained?(delta, set_vars) AND contained?(sigma, set_vars)
+    IMPLIES contained?(append(delta, sigma), set_vars)
+
+contained_supset: LEMMA  
+    contained?(delta, set_vars) AND subset?(set_vars, set_vars1)
+    IMPLIES contained?(delta, set_vars1)
+
+more_general_equal: LEMMA 
+    equal?(sigma, sigma1) IMPLIES 
+    more_general?(delta, sigma) = more_general?(delta, sigma1)
+   
+more_general_append: LEMMA 
+     more_general?(sigma, sigma1) IMPLIES more_general?(append(sigma, delta), append(sigma1, delta))
+
+more_general_supset: LEMMA 
+    more_general?(sigma, append(delta1, delta), set_vars1) AND subset?(set_vars, set_vars1)
+    AND disjoint?(dom(delta1), set_vars) AND contained?(delta, set_vars)
+    IMPLIES more_general?(sigma, delta, set_vars)
+
+%Some auxiliary lemmas for proving completeness
+more_general_trans: LEMMA
+    more_general?(gamma, sigma, dom(gamma)) AND more_general?(sigma, delta, dom(gamma)) IMPLIES more_general?(gamma, delta, dom(gamma))
+
+more_general_hereditary: LEMMA
+    FORALL( A, B: finite_set[variable]): subset?(A, B) AND more_general?(gamma, sigma, B) IMPLIES more_general?(gamma, sigma, A)
+
+more_general_for_completeness: LEMMA
+   FORALL(gamma, gammaP, theta: sub, A: finite_set[variable]):
+      more_general?(gamma, gammaP, A) AND NOT more_general?(gamma, theta, A) IMPLIES
+         NOT more_general?(gammaP, theta, A)
+
+% renamings
+renaming_ord: LEMMA 
+    ord(subs(rho)(t)) = ord(t)
+
+renaming_ord2: LEMMA  
+    (const?(t) IFF const?(subs(rho)(t))) AND (var?(t) IFF var?(subs(rho)(t))) AND 
+    (t = unit IFF subs(rho)(t) = unit) AND (pair?(t) IFF pair?(subs(rho)(t))) AND
+    (app?(t) IFF app?(subs(rho)(t))) 
+
+renaming_var: LEMMA 
+    var?(subs(rho)(X))
+
+renaming_equal: LEMMA    
+   (FORALL X:
+      member(X, vars(img(rho))) AND NOT member(X, dom(rho)) IMPLIES NOT member(X, V1)) AND
+    subset?(vars(t), V1) AND subset?(vars(s), V1) AND subs(rho)(t) = subs(rho)(s)
+    IMPLIES t = s
+
+renaming_var2: LEMMA 
+   (FORALL X:
+      member(X, vars(img(rho))) AND NOT member(X, dom(rho)) IMPLIES NOT member(X, V1)) AND
+   var?(s) AND member(V(s), V1) AND subset?(vars(t), V1) IMPLIES
+   (member(V(subs(rho)(s)), vars(subs(rho)(t))) IFF member(V(s), vars(t)))
+
+renaming_equal_syn: LEMMA 
+   LET sig1 = cons((Y, t), null), sig1_ = cons((V(subs(rho)(Y)), subs(rho)(t)), null) IN
+   (FORALL X: 
+      member(X, vars(img(rho))) AND NOT member(X, dom(rho)) IMPLIES NOT member(X, V1))
+   AND member(Y, V1) IMPLIES equal_syn?(append(sig1_, rho), append(rho, sig1), V1)
+
+% shifts lemma
+shift_cor: LEMMA  
+    IF start <= k AND k <= start + n THEN
+       subs(shift(start, n, inc))(variable(k)) = variable(k + inc)
+    ELSE subs(shift(start, n, inc))(variable(k)) = variable(k) 
+    ENDIF
+
+shift_append_equal_syn: LEMMA  
+    LET rho1 = shift(V1, V1_, n) IN 
+    (subset?(dom(rho), V1) AND subset?(vars(img(rho)), V1_)) IMPLIES 
+    equal_syn?(rho, append(rho, rho1), V1)
+
+shift_dom: LEMMA
+    subset?(dom(shift(start, n, inc)), from_min2max[nat](start, start + n)) 
+
+shift_dom2: LEMMA  
+    (inc > 0 IMPLIES dom(shift(start, n, inc)) = from_min2max[nat](start, start + n)) AND
+    (inc = 0 IMPLIES dom(shift(start, n, inc)) = emptyset)
+
+shift_img: LEMMA  
+    subset?(vars(img(shift(start, n, inc))), from_min2max[nat](start + inc, start + inc + n))
+
+shift_img2: LEMMA  
+    (inc > 0 IMPLIES vars(img(shift(start, n, inc))) = from_min2max[nat](start+inc, start + n + inc)) AND
+    (inc = 0 IMPLIES img(shift(start, n, inc)) = emptyset)
+
+shift_renaming: LEMMA  
+     renaming?(shift(start, n, inc))
+
+shift_append_renaming: LEMMA 
+  LET rho1 = shift(V1, V1_, n) IN 
+    (subset?(dom(rho), V1) AND subset?(vars(img(rho)), V1_)) IMPLIES 
+    renaming?(append(rho, rho1))
+
+%Not every renaming is a nice substitution: Take for instance [X |-> Y][Y |-> X]. This substitution is
+%a renaming with domain { X }, but it is not nice.
+%Can we provide a recursive characterization of a nice renaming? Yes.
+
+recursive_nice_renaming?(sigma): RECURSIVE bool =
+    CASES sigma OF
+          null: TRUE,
+	  cons(head, tail):
+	      IF
+	            var?(head`2) AND
+		    NOT head`1 = V(head`2) AND
+		    NOT member(head`1, supset_dom(tail)) AND
+		    NOT member(V(head`2), supset_dom(tail)) AND
+		    NOT member(head`2, img(tail)) AND
+		    NOT member(variable(head`1), img(tail))
+	      THEN
+	            recursive_nice_renaming?(tail)
+	      ELSE
+	            FALSE
+	      ENDIF
+    ENDCASES
+MEASURE sigma BY <<
+
+%Some basic properties of recursive nice renamings
+recursive_nice_renaming_is_nice: LEMMA
+     recursive_nice_renaming?(sigma) IMPLIES nice?(sigma)
+
+recursive_nice_renaming_img_var: LEMMA
+     recursive_nice_renaming?(sigma) AND member(t, img(sigma)) IMPLIES var?(t)
+
+recursive_nice_renaming_dom: LEMMA
+     recursive_nice_renaming?(sigma) IMPLIES
+        IF null?(sigma)
+	THEN dom(sigma) = emptyset
+	ELSE dom(sigma) = add(car(sigma)`1, dom(cdr(sigma)))
+	ENDIF
+
+recursive_nice_renaming_sub_img: LEMMA
+     recursive_nice_renaming?(sigma) IMPLIES
+        IF null?(sigma)
+	THEN vars(img(sigma)) = emptyset
+	ELSE member(V(car(sigma)`2), vars(img(sigma)))
+	ENDIF
+
+recursive_nice_renaming_subs: LEMMA
+     recursive_nice_renaming?(sigma) AND member(X, dom(sigma)) IMPLIES
+        IF null?(cdr(sigma)) OR X = car(sigma)`1
+	THEN subs(sigma)(X) = subs(car(sigma), variable(X))
+	ELSE subs(sigma)(X) = subs(cdr(sigma))(X)
+	ENDIF
+
+recursive_nice_renaming_inj: LEMMA
+     recursive_nice_renaming?(sigma) IMPLIES
+    		(member(X, dom(sigma)) AND member(Y, dom(sigma)) AND subs(sigma)(X) = subs(sigma)(Y) IMPLIES X = Y)
+
+recursive_nice_renaming_is_renaming: LEMMA
+     recursive_nice_renaming?(sigma) IMPLIES renaming?(sigma)
+
+%Every recursive nice renaming is a nice renaming
+recursive_nice_renaming_is_nice_renaming: COROLLARY
+     recursive_nice_renaming?(sigma) IMPLIES nice?(sigma) AND renaming?(sigma)
+
+%Some basic properties of nice renamings
+null_is_renaming: LEMMA
+     renaming?(null)
+
+car_cons_nice_renaming_aux_0: LEMMA
+     renaming?(sigma) AND nice?(sigma) IMPLIES
+        IF null?(sigma)
+	THEN vars(img(sigma)) = emptyset
+	ELSE var?(car(sigma)`2)
+	ENDIF
+
+car_cons_nice_renaming_aux_1: LEMMA
+     renaming?(sigma) AND nice?(sigma) IMPLIES
+        IF null?(sigma)
+        THEN dom(sigma) = emptyset
+        ELSE NOT car(sigma)`1 = V(car(sigma)`2)
+        ENDIF
+
+car_cons_nice_renaming_aux_2: LEMMA
+     renaming?(sigma) AND nice?(sigma) IMPLIES
+        IF null?(sigma)
+        THEN supset_dom(sigma) = emptyset
+        ELSE NOT member(car(sigma)`1, supset_dom(cdr(sigma)))
+        ENDIF
+
+car_cons_nice_renaming_aux_3: LEMMA
+     renaming?(sigma) AND nice?(sigma) IMPLIES
+        IF null?(sigma)
+        THEN supset_dom(sigma) = emptyset
+        ELSE NOT member(V(car(sigma)`2), supset_dom(cdr(sigma)))
+        ENDIF
+
+car_cons_nice_renaming_aux_4: LEMMA
+     renaming?(sigma) AND nice?(sigma) IMPLIES
+        IF null?(sigma)
+	THEN img(sigma) = emptyset
+        ELSE NOT member(car(sigma)`2, img(cdr(sigma)))
+	ENDIF
+
+car_cons_nice_renaming_aux_5: LEMMA
+     renaming?(sigma) AND nice?(sigma) IMPLIES
+        IF null?(sigma)
+	THEN img(sigma) = emptyset
+        ELSE NOT member(variable(car(sigma)`1), img(cdr(sigma)))
+	ENDIF
+
+car_cons_nice_renaming_aux_6: LEMMA
+     renaming?(sigma) AND nice?(sigma) AND member(X, dom(sigma)) IMPLIES
+        IF null?(cdr(sigma)) OR X = car(sigma)`1
+	THEN subs(sigma)(X) = subs(car(sigma), variable(X))
+	ELSE subs(sigma)(X) = subs(cdr(sigma))(X)
+	ENDIF
+
+car_cons_nice_renaming_aux_7: LEMMA
+     renaming?(sigma) AND nice?(sigma) AND member(X, dom(sigma)) AND member(Y, dom(sigma)) IMPLIES
+        IF null?(sigma) OR X = car(sigma)`1 OR Y = car(sigma)`1
+	THEN null?(sigma) OR X = car(sigma)`1 OR Y = car(sigma)`1
+	ELSE subs(cdr(sigma))(X) = subs(cdr(sigma))(Y) IMPLIES X = Y
+	ENDIF
+
+car_cons_nice_renaming_aux_8: LEMMA
+     renaming?(sigma) AND nice?(sigma) IMPLIES
+        IF null?(sigma)
+	THEN null?(sigma)
+	ELSE renaming?(cdr(sigma))
+	ENDIF
+
+%Every nice renaming is a recursive nice renaming
+nice_renaming_implies_recursive_nice_renaming: LEMMA
+    renaming?(sigma) AND nice?(sigma) IMPLIES recursive_nice_renaming?(sigma)
+
+%Nice renamings and recursive nice renamings are equivalent!
+nice_renaming_equivalent_recursive_nice_renaming: COROLLARY
+    renaming?(sigma) AND nice?(sigma) IFF recursive_nice_renaming?(sigma)
+
+%We can provide a good description of the image of a nice renaming
+nice_renaming_img_add: LEMMA
+    renaming?(sigma) AND nice?(sigma) IMPLIES
+       IF null?(sigma)
+       THEN img(sigma) = emptyset
+       ELSE img(sigma) = add(car(sigma)`2, img(cdr(sigma)))
+       ENDIF
+       
+%New addition for completeness results ————————–
+
+nice_renaming_img: LEMMA
+    renaming?(sigma) AND nice?(sigma) IMPLIES img(sigma) = sec_proj(sigma)
+
+nice_renaming_vars_img: LEMMA
+    renaming?(sigma) AND nice?(sigma) IMPLIES vars(img(sigma)) = vars(sec_proj(sigma))
+
+%Append of recursive nice renaming
+recursive_nice_renaming_append: LEMMA
+    recursive_nice_renaming?(append(delta, sigma)) IMPLIES recursive_nice_renaming?(delta) AND recursive_nice_renaming?(sigma)
+
+sec_proj_append_union: LEMMA
+   sec_proj(append(sigma,gamma)) = union(sec_proj(sigma),sec_proj(gamma))
+
+recursive_nice_renaming_append2: LEMMA
+    recursive_nice_renaming?(append(delta, cons(sigma_basic, sigma))) IMPLIES recursive_nice_renaming?(append(delta, sigma))
+
+append_recursive_nice_renaming: LEMMA
+    recursive_nice_renaming?(delta) AND
+    recursive_nice_renaming?(sigma) AND
+    disjoint?(dom(delta), dom(sigma)) AND
+    disjoint?(vars(img(delta)), vars(img(sigma))) AND
+    disjoint?(dom(delta), vars(img(sigma))) AND
+    disjoint?(vars(img(delta)), dom(sigma)) IMPLIES recursive_nice_renaming?(append(delta, sigma))
+
+%New addition for completeness results
+member_recursive_nice_renaming: LEMMA
+   recursive_nice_renaming?(sigma) AND member((X, t), sigma) IMPLIES member(X, dom(sigma)) AND member(t, img(sigma))
+
+%The following lemma provides the action of a recursive nice renaming on nice substitution in the form required in completeness
+
+renaming_effect_var_img_term: LEMMA
+   renaming?(sigma) AND dom(sigma) = vars(img(delta)) AND nice?(append(sigma, delta)) AND member(t, img(delta))AND member(X, vars(t)) IMPLIES var?(subs(sigma)(X)) AND member(subs(sigma)(X), img(sigma))
+
+
+%This recursive characterization of nice renamings will be useful for the construction of
+%inverse renamings in the next lines.
+
+inv_renaming(gamma: renaming  |   nice?(gamma)) : RECURSIVE sub =
+IF null?(gamma) THEN null
+ELSE  
+cons(   ( V(car(gamma)`2),  variable(car(gamma)`1) ),   inv_renaming(cdr(gamma)))
+ENDIF
+MEASURE gamma by <<
+
+%Recursive_nice_renaming construction will be used to derive that inv_renaming maps recursive
+%nice renamings to recursive nice renamings. From Corollary "nice_renaming_equivalent_recursive_nice
+%_renaming" it will follow that inv_renaming maps nice renamings to nice renamings.
+inv_recursive_nice_renaming_supset_dom_var: LEMMA
+    recursive_nice_renaming?(sigma) AND member(X, supset_dom(inv_renaming(sigma))) IMPLIES member(variable(X), img(sigma))
+
+inv_recursive_nice_renaming_supset_dom_var_reciprocal: LEMMA
+    recursive_nice_renaming?(sigma) AND member(variable(X), img(sigma)) IMPLIES member(X, supset_dom(inv_renaming(sigma)))
+
+inv_renaming_supset_dom: LEMMA
+    recursive_nice_renaming?(sigma) IMPLIES supset_dom(inv_renaming(sigma)) = vars(img(sigma))
+
+inv_nice_renaming_aux_0: LEMMA
+    recursive_nice_renaming?(sigma) IMPLIES
+       IF null?(sigma)
+       THEN null?(sigma)
+       ELSE var?(car(inv_renaming(sigma))`2)
+       ENDIF
+
+inv_nice_renaming_aux_1: LEMMA
+    recursive_nice_renaming?(sigma) IMPLIES
+       IF null?(sigma)
+       THEN null?(sigma)
+       ELSE NOT car(inv_renaming(sigma))`1 = V(car(inv_renaming(sigma))`2)
+       ENDIF
+
+inv_nice_renaming_aux_2: LEMMA
+    recursive_nice_renaming?(sigma) IMPLIES
+       IF null?(sigma)
+       THEN null?(sigma)
+       ELSE NOT member(car(inv_renaming(sigma))`1, supset_dom(cdr(inv_renaming(sigma))))
+       ENDIF
+
+inv_nice_renaming_aux_3: LEMMA
+    recursive_nice_renaming?(sigma) IMPLIES
+       IF null?(sigma)
+       THEN null?(sigma)
+       ELSE NOT member(V(car(inv_renaming(sigma))`2), supset_dom(cdr(inv_renaming(sigma))))
+       ENDIF
+
+%Inverses of recursive nice renamings are nice!
+inv_nice_renaming_is_nice: LEMMA
+    recursive_nice_renaming?(sigma) IMPLIES nice?(inv_renaming(sigma))
+
+inv_renaming_dom: COROLLARY
+    recursive_nice_renaming?(sigma) IMPLIES dom(inv_renaming(sigma)) = vars(img(sigma))
+
+%Natural properties of inv_renaming
+inv_renaming_append: LEMMA
+    recursive_nice_renaming?(append(delta, sigma)) IMPLIES
+    	inv_renaming(append(delta, sigma)) = append(inv_renaming(delta), inv_renaming(sigma))
+
+inv_recursive_left_inverse: LEMMA
+    recursive_nice_renaming?(sigma) AND member(X, dom(sigma)) IMPLIES
+         subs(append(inv_renaming(sigma), sigma))(X) = variable(X)
+
+%We must also show that inverses of recursive nice_renamings are renamings
+inv_recursive_nice_renaming_img_var: LEMMA
+    recursive_nice_renaming?(sigma) AND member(X, supset_dom(sigma)) IMPLIES member(variable(X), img(inv_renaming(sigma)))
+
+inv_recursive_nice_renaming_img_var_reciprocal: LEMMA
+    recursive_nice_renaming?(sigma) AND member(variable(X), img(inv_renaming(sigma))) IMPLIES member(X, supset_dom(sigma))
+
+inv_recursive_nice_renaming_range_var: LEMMA
+    recursive_nice_renaming?(sigma) AND member(t, img(inv_renaming(sigma))) IMPLIES var?(t)
+
+inv_renaming_img: LEMMA
+    recursive_nice_renaming?(sigma) IMPLIES vars(img(inv_renaming(sigma))) = supset_dom(sigma)
+
+inv_renaming_img2: COROLLARY
+    recursive_nice_renaming?(sigma) IMPLIES vars(img(inv_renaming(sigma))) = dom(sigma)
+
+%Inverses of recursive nice renamings are recursive nice renamings!
+inv_recursive_nice_renaming_is_recursive_nice_renaming: LEMMA
+    recursive_nice_renaming?(sigma) IMPLIES recursive_nice_renaming?(inv_renaming(sigma))
+
+inv_nice_renaming_is_nice_renaming: COROLLARY FORALL(gamma: renaming | nice?(gamma)):
+    nice?(inv_renaming(gamma)) AND renaming?(inv_renaming(gamma))
+
+%More of the natural properties of inv_renaming
+inv_recursive_is_involution: COROLLARY
+    recursive_nice_renaming?(sigma) IMPLIES inv_renaming(inv_renaming(sigma)) = sigma
+
+inv_recursive_right_inverse: LEMMA
+    recursive_nice_renaming?(sigma) AND member(X, dom(inv_renaming(sigma))) IMPLIES
+         subs(append(sigma, inv_renaming(sigma)))(X) = variable(X)
+
+inv_renaming_correct: COROLLARY FORALL(gamma: renaming | nice?(gamma)): 
+    LET cp_1 = append(gamma, inv_renaming(gamma)),
+        cp_2 = append(inv_renaming(gamma), gamma) IN
+               (member(X, dom(gamma)) IMPLIES subs(cp_2)(X) = variable(X)) AND
+               (member(X, dom(inv_renaming(gamma))) IMPLIES subs(cp_1)(X) = variable(X))
+
+%New addition for completeness results
+inv_renaming_factor: LEMMA
+    recursive_nice_renaming?(sigma) AND dom(sigma) = vars(img(gamma)) AND nice?(gamma) AND member(X, dom(gamma)) IMPLIES
+       subs(append(inv_renaming(sigma), append(sigma, gamma)))(X) = subs(gamma)(X)
+
+inv_renaming_correct_terms: LEMMA
+   recursive_nice_renaming?(sigma) AND subset?(vars(subs(gamma)(t)), dom(sigma)) IMPLIES subs(inv_renaming(sigma))(subs(append(sigma,gamma))(t)) = subs(gamma)(t)
+
+inv_renaming_correct_terms2: COROLLARY
+   recursive_nice_renaming?(sigma) AND subset?(vars(subs(gamma)(t)), dom(inv_renaming(sigma))) IMPLIES subs(sigma)(subs(append(inv_renaming(sigma),gamma))(t)) = subs(gamma)(t)
+
+% Generate first the required fresh variables and then the disjoint renaming
+gen_fresh_vars(n: nat, DV, FV: finite_set[variable]): RECURSIVE set[variable] =
+IF n = 0 THEN emptyset[variable]
+ELSE
+   LET
+      X = freshVar(union(DV, FV))
+   IN
+      add(X, gen_fresh_vars(n - 1, DV, add(X, FV)))
+ENDIF
+MEASURE n
+
+gen_fresh_vars(n: nat, DV: finite_set[variable]): set[variable] = gen_fresh_vars(n, DV, emptyset[variable])
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%.
+%We will prove the following auxiliary lemmata in order to make sure we can prove TCC
+%"gen_fresh_vars_card_TCC1". We must show that the construction "gen_fresh_vars" guarantees
+%the finiteness of its output in a way that is independent of the chosen finite sets DV
+%and FV (see Corollary "gen_fresh_vars_finiteness").
+
+gen_fresh_vars_tower: LEMMA FORALL(n: nat, DV, FV: finite_set[variable]):
+   subset?(gen_fresh_vars(n, DV, add(freshVar(union(DV, FV)), FV)), gen_fresh_vars(n + 1, DV, FV))
+
+%We are  using the term "tower" in order to provide an intuitive meaning for how the sets grow.
+%Of course, we must prove that this type of intuition is correct.
+%That is done in Corollary "gen_fresh_vars_card_tower_strictly_increases".
+%
+%                       Xn
+%                       ^
+%                       |
+%                       .
+%                       .
+%                       .
+%                       ^
+%                       |
+%                       X1
+%                       ^
+%                       |
+%                       X0
+%
+
+gen_fresh_vars_finite_tower: COROLLARY FORALL(n: nat, DV, FV: finite_set[variable]):
+   is_finite(gen_fresh_vars(n, DV, add(freshVar(union(DV, FV)), FV))) IMPLIES is_finite(gen_fresh_vars(n + 1, DV, FV))
+
+gen_fresh_vars_finiteness_invariant: COROLLARY FORALL(n: nat, DV, FV, DV_p, FV_p: finite_set[variable]):
+   is_finite(gen_fresh_vars(n, DV, FV)) IMPLIES is_finite(gen_fresh_vars(n, DV_p, FV_p))
+
+%Given the symmetry of the previous result, we can rewrite it as:
+gen_fresh_vars_finiteness_invariant_iff: COROLLARY FORALL(n: nat, DV, FV, DV_p, FV_p: finite_set[variable]):
+   is_finite(gen_fresh_vars(n, DV, FV)) IFF is_finite(gen_fresh_vars(n, DV_p, FV_p))
+
+%Corollary "gen_fresh_vars_finiteness_invariant" ensures the following:
+gen_fresh_vars_is_finite: COROLLARY FORALL(n: nat, DV: finite_set[variable]):
+   is_finite(gen_fresh_vars(n, DV))
+
+%Now, TCC "gen_fresh_vars_card_TCC1" follows naturally!
+%Also, we can prove the following for the more general construction (i.e. we don't need FV = emptyset).
+%This shall be useful for other TCCs on card that may appear afterwards if we require FV /= emptyset.
+gen_fresh_vars_finiteness: COROLLARY FORALL(n: nat, DV, FV: finite_set[variable]):
+   is_finite(gen_fresh_vars(n, DV, FV))
+
+%Now, we should also be able to prove that the size of the output set depends only
+%on the natural number n. I'll do that in the following lines:
+gen_fresh_vars_card_tower: COROLLARY FORALL(n: nat, DV, FV: finite_set[variable]):
+   card(gen_fresh_vars(n, DV, add(freshVar(union(DV, FV)), FV))) <= card(gen_fresh_vars(n + 1, DV, FV))
+
+gen_fresh_vars_freshness_general: LEMMA FORALL(n: nat, DV, FV: finite_set[variable]):
+   disjoint?(gen_fresh_vars(n, DV, FV), DV)
+
+gen_fresh_vars_freshness: COROLLARY FORALL(n: nat, DV: finite_set[variable]):
+   disjoint?(gen_fresh_vars(n, DV), DV)
+
+gen_fresh_vars_tower_disjointness: LEMMA FORALL(n: nat, DV, FV: finite_set[variable]):
+   disjoint?(gen_fresh_vars(n, DV, FV), FV)
+
+gen_fresh_vars_tower_non_stationary: COROLLARY FORALL(n: nat, DV, FV: finite_set[variable]):
+   IF n = 0
+   THEN gen_fresh_vars(n, DV, FV) = emptyset[variable]
+   ELSE
+       X = freshVar(union(DV, FV)) IMPLIES
+       difference(gen_fresh_vars(n, DV, FV), gen_fresh_vars(n - 1, DV, add(X, FV))) = singleton(X)
+   ENDIF
+
+gen_fresh_vars_card_tower_no_collapse: COROLLARY FORALL(n: nat, DV, FV: finite_set[variable]):
+   X = freshVar(union(DV, FV)) IMPLIES
+   IF n = 0
+   THEN NOT member(X, gen_fresh_vars(n, DV, FV))
+   ELSE NOT member(X, gen_fresh_vars(n - 1, DV, add(X, FV)))
+   ENDIF
+
+gen_fresh_vars_card_tower_strictly_increases: COROLLARY FORALL(n: nat, DV, FV: finite_set[variable]):
+   card(gen_fresh_vars(n, DV, add(freshVar(union(DV, FV)), FV))) < card(gen_fresh_vars(n + 1, DV, FV))
+
+%Now, we can prove that the cardinality of the output does not depend on DV or on FV.
+gen_fresh_vars_card_invariant: COROLLARY FORALL(n: nat, DV, FV, DV_p, FV_p: finite_set[variable]):
+   card(gen_fresh_vars(n, DV, FV)) = card(gen_fresh_vars(n, DV_p, FV_p))
+
+%The last corollary is what is required to prove "gen_fresh_vars_card":
+gen_fresh_vars_card: COROLLARY FORALL(n: nat, DV: finite_set[variable]): card(gen_fresh_vars(n, DV)) = n
+
+%Now, we can prove that the the cardinality of the output is exactly n, whatever the sets DV or FV may be:
+gen_fresh_vars_card_is_n: COROLLARY FORALL(n: nat, DV, FV: finite_set[variable]):
+   card(gen_fresh_vars(n, DV, FV)) = n
+
+%The previous lemmata provide the means to prove the TCCs generated by disj_var_renaming and disj_var_renaming as well.
+disj_var_renaming(V, DV: finite_set[variable],
+                    (FV:finite_set[variable] | card(FV)=card(V) AND disjoint?(FV,union(V,DV)))) : RECURSIVE sub =
+IF empty?(V) THEN null
+     ELSE
+        LET
+	   X = choose(V),
+	   Y = choose(FV)
+	IN  
+           cons((X, variable(Y)), disj_var_renaming(rest[variable](V), DV, rest[variable](FV)))
+     ENDIF 
+MEASURE card(V)
+
+%Basic properties of the three input disj_var_renaming.
+disj_var_supset_dom: LEMMA FORALL(V, DV: finite_set[variable], (FV:finite_set[variable] | card(FV)=card(V) AND disjoint?(FV,union(V,DV)))):
+     supset_dom(disj_var_renaming(V, DV, FV)) = V
+
+disj_var_sec_proj: LEMMA FORALL(V, DV: finite_set[variable], (FV:finite_set[variable] | card(FV)=card(V) AND disjoint?(FV,union(V,DV)))):
+     vars(sec_proj(disj_var_renaming(V, DV, FV))) = FV
+
+%disj_var_renaming is recursive_nice_renaming!
+disj_var_recursive_nice_renaming: LEMMA FORALL(V, DV: finite_set[variable], (FV:finite_set[variable] | card(FV)=card(V) AND disjoint?(FV,union(V,DV)))):
+     recursive_nice_renaming?(disj_var_renaming(V, DV, FV))
+
+%we can now prove the renaming TCC about the two input disj_var_renaming.
+disj_var_nice_and_renaming: COROLLARY FORALL(V, DV: finite_set[variable], (FV:finite_set[variable] | card(FV)=card(V) AND disjoint?(FV,union(V,DV)))):
+     nice?(disj_var_renaming(V, DV, FV)) AND renaming?(disj_var_renaming(V, DV, FV))
+
+%This takes care of the renaming TCC generated by the two input disj_var_renaming:
+disj_var_renaming(V, DV: finite_set[variable]): renaming =
+        LET FV = gen_fresh_vars(card(V), union(V, DV)) IN  
+        disj_var_renaming(V, DV, FV)
+
+%New addition for completeness results
+disj_var_renaming_nice_and_renaming: COROLLARY FORALL(V, DV: finite_set[variable]):
+     nice?(disj_var_renaming(V, DV)) AND renaming?(disj_var_renaming(V, DV))
+
+disj_var_renaming_dom: COROLLARY FORALL(V, DV: finite_set[variable]):
+     dom(disj_var_renaming(V, DV)) = V
+
+disj_var_renaming_img: COROLLARY FORALL(V, DV: finite_set[variable]):                                 %This follows immediately from Lemma "nice_renaming_img", but this corollary is good for usability in completeness
+     img(disj_var_renaming(V, DV)) = sec_proj(disj_var_renaming(V, DV))
+
+disj_var_renaming_vars_img: COROLLARY FORALL(V, DV: finite_set[variable]):			      %This follows immediately from Lemma "nice_renaming_vars_img", but this corollary is good for usability in completeness
+     vars(img(disj_var_renaming(V, DV))) = vars(sec_proj(disj_var_renaming(V, DV)))
+
+disj_var_renaming_vars_img_are_all_fresh: COROLLARY FORALL(V, DV: finite_set[variable]):
+     vars(img(disj_var_renaming(V, DV))) = gen_fresh_vars(card(V), union(V, DV))
+
+%We can now construct an r_generalizer from a generalizer.
+
+%What follows is useful for constructing an r_generalizer
+%from a generalizer in the completeness theory.
+
+rename_vars_img(sigma: (nice?))(FV: finite_set[variable]): sub =
+   LET
+      rho = disj_var_renaming(vars(img(sigma)), union(dom(sigma), FV))
+   IN
+      append(rho, sigma)
+
+%Some expected properties of rename_vars_img.
+rename_vars_img_more_general: LEMMA FORALL(sigma: (nice?), FV: finite_set[variable]):
+   more_general?(sigma, rename_vars_img(sigma)(FV))
+
+rename_vars_img_is_nice: LEMMA FORALL(sigma: (nice?), FV: finite_set[variable]):
+   nice?(rename_vars_img(sigma)(FV))
+
+rename_vars_img_dom: LEMMA FORALL(sigma: (nice?), FV: finite_set[variable]):
+   dom(rename_vars_img(sigma)(FV)) = union(dom(sigma), vars(img(sigma)))
+
+rename_vars_img_vars_img: LEMMA FORALL(sigma: (nice?), FV: finite_set[variable]):
+   vars(img(rename_vars_img(sigma)(FV))) = gen_fresh_vars(card(vars(img(sigma))), union(vars(img(sigma)), union(dom(sigma), FV)))
+
+rename_vars_img_vars_img_disjoint: LEMMA FORALL(sigma: (nice?), FV: finite_set[variable]):
+   disjoint?(vars(img(rename_vars_img(sigma)(FV))), FV)
+
+%Constructor rename_vars_img_action: This one shall be the
+%substitution that has the same action of rename_vars_img
+%on the domain of sigma.
+rename_vars_img_action(sigma: (nice?))(FV: finite_set[variable]): sub = subs_dom_img(rename_vars_img(sigma)(FV))(dom(sigma))
+
+%Some expected properties of rename_vars_img_action.
+rename_vars_img_action_dom: LEMMA FORALL(sigma: (nice?), FV: finite_set[variable]):
+   dom(rename_vars_img_action(sigma)(FV)) = dom(sigma)
+
+rename_vars_img_action_vars_img: LEMMA FORALL(sigma: (nice?), FV: finite_set[variable]):
+   vars(img(rename_vars_img_action(sigma)(FV))) = vars(img(rename_vars_img(sigma)(FV)))
+
+rename_vars_img_action_comp_more_general: LEMMA FORALL(sigma: (nice?), FV: finite_set[variable]):
+   more_general?(sigma, rename_vars_img_action(sigma)(FV), dom(sigma))
+
+rename_vars_img_action_comp: LEMMA FORALL(tau: sub, sigma: (nice?), FV: finite_set[variable]):
+   LET
+      rho = disj_var_renaming(vars(img(sigma)), union(dom(sigma), FV))
+   IN
+      member(X, dom(sigma)) IMPLIES
+         subs(append(append(tau, inv_renaming(rho)), rename_vars_img_action(sigma)(FV)))(X) =
+	 subs(append(tau, sigma))(X)
+
+%Restriction constructor for nice substitutions.
+r_nice_subs(sigma:(nice?))((SV: finite_set[variable] | subset?(SV,dom(sigma)))) :
+   RECURSIVE sub =
+     IF empty?(SV) THEN null
+     ELSE cons(( choose(SV),  subs(sigma)(choose(SV))), r_nice_subs(sigma)(rest[variable](SV)))
+     ENDIF
+   MEASURE card(SV)
+
+r_nice_supset_dom : LEMMA FORALL(sigma:(nice?),SV:finite_set[variable]) :
+  subset?(SV,dom(sigma)) IMPLIES supset_dom(r_nice_subs(sigma)(SV)) = SV
+
+r_nice_disj_dom_img  :  LEMMA FORALL(sigma:(nice?),SV:finite_set[variable]) :
+  subset?(SV,dom(sigma)) IMPLIES  disjoint?(dom(sigma), vars(img(r_nice_subs(sigma)(SV))))
+
+r_nice_dom_and_niceness : LEMMA FORALL(sigma:(nice?),SV:finite_set[variable]) :
+  subset?(SV,dom(sigma)) IMPLIES (dom(r_nice_subs(sigma)(SV)) = SV AND nice?(r_nice_subs(sigma)(SV)))
+
+r_nice_equality : LEMMA FORALL(sigma:(nice?),SV:finite_set[variable]) :
+   (subset?(SV,dom(sigma)) AND member(X,SV)) IMPLIES
+                     subs(sigma)(X) = subs(r_nice_subs(sigma)(SV))(X)
+
+r_nice_img: LEMMA FORALL(sigma:(nice?),SV:finite_set[variable]) :
+  subset?(SV,dom(sigma)) IMPLIES subset?(img(r_nice_subs(sigma)(SV)),img(sigma))
+
+END first_order_substitution
