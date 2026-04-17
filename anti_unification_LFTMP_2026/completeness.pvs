@@ -1,0 +1,384 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Completeness of Syntactic antiunification  %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Mariano Miguel Moscato      AMA/NASA LaRC Formal Methods
+% Maria Julia Dias Lima       Universidade de Brasília
+% Mauricio Ayala-Rincon       Universidade de Brasília
+% Temur Kutsia                RISC/Johannes Kepler Universitaet Linz
+% Thaynara Arielly de Lima    Universidade Federal de Goiás
+% Marcos Mercandeli-Rodrigues Universidade de Brasília
+%
+%    Last modified 17th April, 2026
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+completeness
+: theory
+begin
+
+  importing antiunify_derivation
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%% Antiunification - Completeness %%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%———————————————————— Definition of a generalizer ————————————————————————————————————%
+
+generalizer?(c: (validConfiguration?))(gamma: (nice?)): bool = 
+   labels(c`unsolved) = dom(gamma) AND
+   EXISTS(tau_l, tau_r: sub):
+      FORALL (eq: AUT | member(eq, c`unsolved)):
+         subs(append(tau_l, gamma))(eq`label) = eq`lhs AND
+	 subs(append(tau_r, gamma))(eq`label) = eq`rhs
+
+r_generalizer?(c: (validConfiguration?))(gamma: (nice?)): bool = 
+   subset?(labels(c`unsolved), dom(gamma)) AND
+   disjoint?(vars(img(gamma)), vars(antiunify(c))) AND
+   disjoint?(difference(dom(gamma), labels(c`unsolved)), vars(antiunify(c))) AND
+   EXISTS(tau_l, tau_r: sub):
+      FORALL (eq: AUT | member(eq, c`unsolved)):
+         subs(append(tau_l, gamma))(eq`label) = eq`lhs AND
+         subs(append(tau_r, gamma))(eq`label) = eq`rhs
+
+antiunify_and_vars_img_r_generalizer: COROLLARY  % definitional corollary
+   FORALL (c: (validConfiguration?), gamma: (r_generalizer?(c))):
+      disjoint?(vars(img(gamma)), labels(c`unsolved))
+
+%Given an r_generalizer, we can always assume without loss of generality that its domain is the
+%set of labels of the unsolved part.
+r_gen_can_be_restricted: LEMMA
+   FORALL (c: (validConfiguration?), gamma: (r_generalizer?(c))):
+      r_generalizer?(c)(subs_dom_img(gamma)(labels(c`unsolved)))
+
+r_gen_can_be_restricted_is_generalizer: COROLLARY
+   FORALL (c: (validConfiguration?), gamma: (r_generalizer?(c))):
+      generalizer?(c)(subs_dom_img(gamma)(labels(c`unsolved)))
+
+r_gen_can_be_restricted_more_general: COROLLARY
+   FORALL (c: (validConfiguration?), gamma: (r_generalizer?(c))):
+      more_general?(gamma, antiunify(c)`substitution, labels(c`unsolved)) =
+      more_general?(subs_dom_img(gamma)(labels(c`unsolved)), antiunify(c)`substitution, labels(c`unsolved))
+
+antiunify_r_gen_members_img_vars_disjoint: COROLLARY  % definitional corollary
+   FORALL (c: (validConfiguration?), gamma: (r_generalizer?(c)), DV: finite_set[variable]):
+      cons?(c`unsolved) AND subset?(DV, vars(antiunify(c))) IMPLIES
+	    disjoint?(vars(subs(gamma)(car(c`unsolved)`label)), union(labels(cdr(c`unsolved)), DV))
+
+%The following lemma states an important property of r_generalizers.
+%Let gamma be an r_generalizer of a configuration C and let C' = antiunif(C).
+%If l is a variable in C' that is fresh for C, then gamma(l) = l.
+antiunify_r_gen_preserves_fresh_vars: LEMMA
+   FORALL (c: (validConfiguration?), gamma: (r_generalizer?(c)), l: (difference(vars(antiunify(c)), vars(c)))):
+      subs(gamma)(l) = variable(l)
+
+%The constructions of disj_var_renaming, inv_renaming, and subs_dom_img should suf-
+%fice to construct an r_geneneralizer from a generalizer. We'll do that in
+%the following lines.
+
+%———————————————————— Construct an r-Generalizer from a Generalizer ——————————————————%
+
+%Constructor gen_to_r_gen: This one shall be the r_generalizer.
+gen_to_r_gen(c: (validConfiguration?))(gamma: (generalizer?(c))): sub = rename_vars_img_action(gamma)(vars(antiunify(c)))
+
+%The following lemma shows the correctness of the construction!
+gen_to_r_gen_correct: LEMMA
+   FORALL(c: (validConfiguration?), gamma: (generalizer?(c))):
+      r_generalizer?(c)(gen_to_r_gen(c)(gamma))
+
+%We can now prove Corollary "antiunif_is_complete".
+
+%Constructor r_gen_fresh_img: r_generalizers are preserved by variable renaming in the range.
+r_gen_fresh_img(c: (validConfiguration?))(gamma: (r_generalizer?(c)))(DV: finite_set[variable]): { sigma: (nice?) | r_generalizer?(c)(sigma) } = rename_vars_img_action(gamma)(union(vars(antiunify(c)), DV))
+
+r_gen_fresh_img_comparison: LEMMA
+   FORALL(c: (validConfiguration?), gamma: (r_generalizer?(c)), DV: finite_set[variable]):
+      more_general?(gamma, r_gen_fresh_img(c)(gamma)(DV), labels(c`unsolved)) AND
+      more_general?(r_gen_fresh_img(c)(gamma)(DV), gamma, labels(c`unsolved))
+
+%———————————————————— Lemmata for r_Generalizer Classification ——–————————————————————%
+
+matchingFuns_r_generalizer_classification: LEMMA
+    FORALL(c: (match_DecF_conf?), gamma:(r_generalizer?(c))):
+      LET eq = car(c`unsolved) IN
+          var?(subs(gamma)(eq`label)) OR
+    	  (app?(subs(gamma)(eq`label)))
+
+matchingFuns_r_generalizer_f_symbol: LEMMA
+    FORALL(c: (match_DecF_conf?), gamma:(r_generalizer?(c))):
+      LET eq = car(c`unsolved) IN
+          app?(subs(gamma)(eq`label)) IMPLIES
+	  sym(subs(gamma)(eq`label)) = sym(lhs(eq))
+
+matchingPairs_r_generalizer_classification: LEMMA
+    FORALL(c: (match_DecP_conf?), gamma:(r_generalizer?(c))):
+      LET eq = car(c`unsolved) IN
+          var?(subs(gamma)(eq`label)) OR
+    	  pair?(subs(gamma)(eq`label))
+
+syntacticallyEq_r_generalizer_classification: LEMMA
+    FORALL(c: (match_Synt_conf?), gamma:(r_generalizer?(c))):
+      LET eq = car(c`unsolved) IN
+     	  const?(subs(gamma)(eq`label)) OR
+          var?(subs(gamma)(eq`label)) OR    
+          unit?(subs(gamma)(eq`label))
+
+SolvedEq_r_generalizer_classification: LEMMA
+    FORALL(c: (match_Sol_conf?), gamma:(r_generalizer?(c))):
+      LET eq = car(c`unsolved) IN
+          var?(subs(gamma)(eq`label))
+
+%—————————————————————————————— Constructors for Completeness ————————————————————————%
+
+%Constructor for fresh labels and substitutions to be used during the auxiliary
+%lemmata for completeness:
+lateral_subs?(c: (validConfiguration?))(gamma: (r_generalizer?(c)))(tau_l: sub)(tau_r: sub): bool =
+   FORALL (eq : AUT | member(eq, c`unsolved)):
+      subs(append(tau_l, gamma))(eq`label) = eq`lhs AND
+      subs(append(tau_r, gamma))(eq`label) = eq`rhs
+
+MakeFreshLabel(c: (validConfiguration?))(gamma: (r_generalizer?(c)))(FL: finite_set[variable])(DV: finite_set[variable]): variable =
+   freshLabel(antiunify(c), union(FL, union(union(dom(gamma), vars(img(gamma))), DV)))
+
+MakeSubs(c: (validConfiguration?))(gamma: (r_generalizer?(c)))(sigma: sub): sub =
+   IF cons?(c`unsolved)
+   THEN append(sigma, r_nice_subs(gamma)(labels(cdr(c`unsolved))))
+   ELSE sigma
+   ENDIF
+
+%Lemmata on the basic properties of constructors.
+MakeFreshLabel_membership: LEMMA
+   FORALL (c: (validConfiguration?), gamma: (r_generalizer?(c)), FL, DV: finite_set[variable]):
+      LET
+         l = MakeFreshLabel(c)(gamma)(FL)(DV)
+      IN
+         NOT member(l, vars(antiunify(c))) AND
+	 NOT member(l, FL) AND
+	 NOT member(l, dom(gamma)) AND
+	 NOT member(l, vars(img(gamma))) AND
+	 NOT member(l, DV)
+
+DecF_MakeFreshLabel_not_in_subs_eq: LEMMA
+   FORALL (c: (match_DecF_conf?), gamma: (r_generalizer?(c)), FL, DV: finite_set[variable], eq: AUT | member(eq, DecF(c)`unsolved)):
+      LET
+         l = MakeFreshLabel(c)(gamma)(FL)(DV),
+	 t = subs(gamma)(variable(eq`label))
+      IN
+         NOT member(l, vars(t))
+
+DecP_MakeFreshLabel_not_in_subs_eq: LEMMA
+   FORALL (c: (match_DecP_conf?), gamma: (r_generalizer?(c)), FL, DV: finite_set[variable], eq: AUT | member(eq, DecP(c)`unsolved)):
+      LET
+         l = MakeFreshLabel(c)(gamma)(FL)(DV),
+	 l_p = MakeFreshLabel(c)(gamma)(add(l, FL))(DV),
+	 t = subs(gamma)(variable(eq`label))
+      IN
+         NOT member(l, vars(t)) AND
+	 NOT member(l_p, vars(t))
+
+MakeSubs_preserves_fresh_vars: LEMMA
+   FORALL (c: (validConfiguration?), gamma: (r_generalizer?(c)), sigma: sub, l: (difference(vars(antiunify(c)), vars(c)))):
+      subs(MakeSubs(c)(gamma)(sigma))(l) = subs(sigma)(l)
+
+%Lemmata for constructing r_generalizers depending on the rules.
+
+%Lemmata about r_generalizer for DecF variable case
+DecF_MakeSub_nice_var_case: LEMMA
+   FORALL (c: (match_DecF_conf?), gamma: (r_generalizer?(c)), FL, DV: finite_set[variable]):
+      var?(subs(gamma)(car(c`unsolved)`label)) IMPLIES
+         LET
+            y = car(DecF(c)`unsolved)`label,
+	    u = subs(gamma)(car(c`unsolved)`label),
+            w = MakeFreshLabel(c)(gamma)(add(V(u), add(y, FL)))(DV),
+	    f = f_sym(car(c`unsolved)`lhs)
+         IN
+            nice?(MakeSubs(c)(gamma)(cons[basic_sub]((y, variable(w)),
+	    			     cons[basic_sub]((V(u), app(f, variable(w))),
+				     null[basic_sub]))))
+
+DecF_MakeSub_r_gen_var_case: LEMMA
+   FORALL (c: (match_DecF_conf?), gamma: (r_generalizer?(c)), tau_l, tau_r: sub):
+      var?(subs(gamma)(car(c`unsolved)`label)) AND
+      lateral_subs?(c)(gamma)(tau_l)(tau_r) IMPLIES
+         LET
+            y = car(DecF(c)`unsolved)`label,
+	    u = subs(gamma)(car(c`unsolved)`label),
+            w = MakeFreshLabel(c)(gamma)(add(V(u), add(y,labels(cdr(c`unsolved)))))(union(union(dom(tau_l), dom(tau_r)), union(vars(img(tau_l)), vars(img(tau_r))))),
+	    f = f_sym(car(c`unsolved)`lhs)
+         IN  
+            r_generalizer?(DecF(c))(MakeSubs(c)(gamma)(cons[basic_sub]((y, variable(w)),
+	    			                          cons[basic_sub]((V(u), app(f, variable(w))),
+				                          null[basic_sub]))))
+
+%Lemmata about r_generalizer for DecP variable case
+DecP_MakeSub_nice_var_case: LEMMA
+   FORALL (c: (match_DecP_conf?), gamma: (r_generalizer?(c)), FL, DV: finite_set[variable]):
+      var?(subs(gamma)(car(c`unsolved)`label)) IMPLIES
+         LET
+            y = car(DecP(c)`unsolved)`label,
+	    y_p = car(cdr(DecP(c)`unsolved))`label,
+	    u = subs(gamma)(car(c`unsolved)`label),
+            w = MakeFreshLabel(c)(gamma)(add(V(u), add(y, add(y_p, FL))))(DV),
+	    w_p = MakeFreshLabel(c)(gamma)(add(w, add(V(u), add(y, add(y_p, FL)))))(DV)
+         IN
+            nice?(MakeSubs(c)(gamma)(cons[basic_sub]((y_p, variable(w_p)),
+				     cons[basic_sub]((y, variable(w)),
+	    			     cons[basic_sub]((V(u), pair(variable(w),
+                                               variable(w_p))),
+				     null[basic_sub])))))
+
+DecP_MakeSub_r_gen_var_case: LEMMA
+   FORALL (c: (match_DecP_conf?), gamma: (r_generalizer?(c)), tau_l, tau_r: sub):
+      var?(subs(gamma)(car(c`unsolved)`label)) AND
+      lateral_subs?(c)(gamma)(tau_l)(tau_r) IMPLIES
+         LET
+            y = car(DecP(c)`unsolved)`label,
+	    y_p = car(cdr(DecP(c)`unsolved))`label,
+	    u = subs(gamma)(car(c`unsolved)`label),
+            w = MakeFreshLabel(c)(gamma)(add(V(u), add(y, add(y_p, labels(cdr(c`unsolved))))))(union(union(dom(tau_l), dom(tau_r)), union(vars(img(tau_l)), vars(img(tau_r))))),
+	    w_p = MakeFreshLabel(c)(gamma)(add(w, add(V(u), add(y, add(y_p, labels(cdr(c`unsolved)))))))(union(union(dom(tau_l), dom(tau_r)), union(vars(img(tau_l)), vars(img(tau_r)))))
+         IN  
+            r_generalizer?(DecP(c))(MakeSubs(c)(gamma)(cons[basic_sub]((y_p, variable(w_p)),
+						       cons[basic_sub]((y, variable(w)),
+	    			     		       cons[basic_sub]((V(u), pair(variable(w), variable(w_p))),
+				     		       null[basic_sub])))))
+
+%Lemmata about r_generalizer for DecF app case
+DecF_MakeSub_nice_app_case: LEMMA
+   FORALL (c: (match_DecF_conf?), gamma: (r_generalizer?(c))):
+      app?(subs(gamma)(car(c`unsolved)`label)) IMPLIES
+         LET
+            y = car(DecF(c)`unsolved)`label,
+	    t = subs(gamma)(car(c`unsolved)`label)
+         IN
+            nice?(MakeSubs(c)(gamma)(cons[basic_sub]((y, arg(t)),  null[basic_sub])))
+
+DecF_MakeSub_r_gen_app_case: LEMMA
+   FORALL (c: (match_DecF_conf?), gamma: (r_generalizer?(c))):
+      app?(subs(gamma)(car(c`unsolved)`label)) IMPLIES
+         LET
+            y = car(DecF(c)`unsolved)`label,
+	    t = subs(gamma)(car(c`unsolved)`label)
+         IN
+            r_generalizer?(DecF(c))(MakeSubs(c)(gamma)(cons[basic_sub]((y, arg(t)),  null[basic_sub])))
+
+%Lemmata about r_generalizer for DecP pair case
+DecP_MakeSub_nice_pair_case: LEMMA
+   FORALL (c: (match_DecP_conf?), gamma: (r_generalizer?(c))):
+       pair?(subs(gamma)(car(c`unsolved)`label)) IMPLIES
+         LET
+            y = car(DecP(c)`unsolved)`label,
+	    y_p = car(cdr(DecP(c)`unsolved))`label,
+	    t1 = term1(subs(gamma)(car(c`unsolved)`label)),
+	    t2 = term2(subs(gamma)(car(c`unsolved)`label))
+         IN
+            nice?(MakeSubs(c)(gamma)(cons[basic_sub]((y, t1),  cons[basic_sub]((y_p, t2), null[basic_sub]))))
+
+DecP_MakeSub_r_gen_pair_case: LEMMA
+   FORALL (c: (match_DecP_conf?), gamma: (r_generalizer?(c))):
+       pair?(subs(gamma)(car(c`unsolved)`label)) IMPLIES
+         LET
+            y = car(DecP(c)`unsolved)`label,
+	    y_p = car(cdr(DecP(c)`unsolved))`label,
+	    t1 = term1(subs(gamma)(car(c`unsolved)`label)),
+	    t2 = term2(subs(gamma)(car(c`unsolved)`label))
+         IN
+            r_generalizer?(DecP(c))(MakeSubs(c)(gamma)(cons[basic_sub]((y, t1),  cons[basic_sub]((y_p, t2), null[basic_sub]))))
+
+%Lemma about r_generalizer for Synt
+Synt_r_generalizer: LEMMA
+   FORALL (c: (match_Synt_conf?), gamma: (r_generalizer?(c))):
+      LET
+         gammaP = r_nice_subs(gamma)(labels(cdr(c`unsolved)))
+      IN
+         r_generalizer?(Synt(c))(gammaP)
+
+%Lemma about r_generalizer for Solve
+Solve_r_generalizer: LEMMA
+   FORALL (c: (match_Sol_conf?), gamma: (r_generalizer?(c))):
+      LET
+         gammaP = r_nice_subs(gamma)(labels(cdr(c`unsolved)))
+      IN
+         r_generalizer?(Solve(c))(gammaP)
+
+%———————————————————— More General Lemmata for (r_)Generalizer Classification ——–————————————————————%
+
+%The following lemma generalizes the lemma "matchingFuns_r_generalizer_classification".
+matchingFuns_r_generalizer_classification_general: LEMMA
+    FORALL(c: (validConfiguration?), gamma:(r_generalizer?(c))):
+      FORALL(eq: AUT | member(eq, c`unsolved)):
+         match_DecF?(eq) IMPLIES var?(subs(gamma)(eq`label)) OR app?(subs(gamma)(eq`label))
+
+matchingFuns_generalizer_classification_general: COROLLARY
+    FORALL(c: (validConfiguration?), gamma:(generalizer?(c))):
+      FORALL(eq: AUT | member(eq, c`unsolved)):
+         match_DecF?(eq) IMPLIES var?(subs(gamma)(eq`label)) OR app?(subs(gamma)(eq`label))
+
+%The following lemma generalizes the lemma "matchingFuns_r_generalizer_f_symbol".
+matchingFuns_r_generalizer_f_symbol_general: LEMMA
+    FORALL(c: (validConfiguration?), gamma:(r_generalizer?(c))):
+      FORALL(eq: AUT | member(eq, c`unsolved)):
+         match_DecF?(eq) AND app?(subs(gamma)(eq`label)) IMPLIES sym(subs(gamma)(eq`label)) = sym(eq`lhs)
+
+matchingFuns_generalizer_f_symbol_general: COROLLARY
+    FORALL(c: (validConfiguration?), gamma:(generalizer?(c))):
+      FORALL(eq: AUT | member(eq, c`unsolved)):
+         match_DecF?(eq) AND app?(subs(gamma)(eq`label)) IMPLIES sym(subs(gamma)(eq`label)) = sym(eq`lhs)
+
+%The following lemma generalizes the lemma "matchingPairs_r_generalizer_classification".
+matchingPairs_r_generalizer_classification_general: LEMMA
+    FORALL(c: (validConfiguration?), gamma:(r_generalizer?(c))):
+      FORALL(eq: AUT | member(eq, c`unsolved)):
+         match_DecP?(eq) IMPLIES var?(subs(gamma)(eq`label)) OR pair?(subs(gamma)(eq`label))
+
+matchingPairs_generalizer_classification_general: COROLLARY
+    FORALL(c: (validConfiguration?), gamma:(generalizer?(c))):
+      FORALL(eq: AUT | member(eq, c`unsolved)):
+         match_DecP?(eq) IMPLIES var?(subs(gamma)(eq`label)) OR pair?(subs(gamma)(eq`label))
+
+%The following lemma generalizes the lemma "syntacticallyEq_r_generalizer_classification".
+syntacticallyEq_r_generalizer_classification_general: LEMMA
+    FORALL(c: (validConfiguration?), gamma:(r_generalizer?(c))):
+      FORALL(eq: AUT | member(eq, c`unsolved)):
+         match_Synt?(eq) IMPLIES const?(subs(gamma)(eq`label)) OR var?(subs(gamma)(eq`label)) OR
+	    unit?(subs(gamma)(eq`label))
+
+syntacticallyEq_generalizer_classification_general: COROLLARY
+    FORALL(c: (validConfiguration?), gamma:(generalizer?(c))):
+      FORALL(eq: AUT | member(eq, c`unsolved)):
+         match_Synt?(eq) IMPLIES const?(subs(gamma)(eq`label)) OR var?(subs(gamma)(eq`label)) OR
+	    unit?(subs(gamma)(eq`label))
+
+%The following lemma generalizes the lemma "SolvedEq_r_generalizer_classification".
+SolvedEq_r_generalizer_classification_general: LEMMA
+    FORALL(c: (validConfiguration?), gamma:(r_generalizer?(c))):
+      FORALL(eq: AUT | member(eq, c`unsolved)):
+         match_Sol?(eq) IMPLIES var?(subs(gamma)(eq`label))
+
+SolvedEq_generalizer_classification_general: COROLLARY
+    FORALL(c: (validConfiguration?), gamma:(generalizer?(c))):
+      FORALL(eq: AUT | member(eq, c`unsolved)):
+         match_Sol?(eq) IMPLIES var?(subs(gamma)(eq`label))
+
+%—————————————————————————————— Lemmata for Completeness —————————————————————————–——–%
+
+antiunif_compl_DecF: LEMMA
+ FORALL (c:(validConfiguration?), (gamma : (nice?) | r_generalizer?(c)(gamma))) :
+     (   match_DecF_conf?(c) AND
+	FORALL (cp: (validConfiguration?)):
+         FORALL ((gammaP: (nice?) | r_generalizer?(cp)(gammaP))):
+          size(cp`unsolved) < size(c`unsolved) IMPLIES
+           more_general?(gammaP, antiunify(cp)`substitution,
+                         labels(cp`unsolved))  )
+IMPLIES more_general?(gamma, antiunify(c)`substitution, labels(c`unsolved))
+
+antiunif_compl_DecP: LEMMA
+ FORALL (c:(validConfiguration?), (gamma : (nice?) | r_generalizer?(c)(gamma))) :
+     (   match_DecP_conf?(c) AND
+	FORALL (cp: (validConfiguration?)):
+         FORALL ((gammaP: (nice?) | r_generalizer?(cp)(gammaP))):
+          size(cp`unsolved) < size(c`unsolved) IMPLIES
+           more_general?(gammaP, antiunify(cp)`substitution,
+                         labels(cp`unsolved))  )
+IMPLIES more_general?(gamma, antiunify(c)`substitution, labels(c`unsolved))
+
+end completeness

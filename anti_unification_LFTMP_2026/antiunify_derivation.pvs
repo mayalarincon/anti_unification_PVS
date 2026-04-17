@@ -1,0 +1,725 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%  Verification of Syntactic Antiunification  %%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Mariano Miguel Moscato      AMA/NASA LaRC Formal Methods
+% Maria Julia Dias Lima       Universidade de Brasilia
+% Marcos Mercandeli-Rodrigues Universidade de Brasilia
+% Temur Kutsia                RISC/Johannes Kepler Universitaet Linz
+% Thaynara Arielly de Lima    Universidade Federal de Goias
+% Mauricio Ayala-Rincon       Universidade de Brasilia
+%
+%    Last modified 17th April, 2026
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+antiunify_derivation: THEORY
+BEGIN
+
+  importing antiunif,
+            TRS@IUnion_extra,
+	    TRS@confluence_commute,
+	    orders@relation_iterate
+	    
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Labels of a Configuration
+%—————————————————————————————————————————————————————————————————————%
+
+%Definitions
+
+labels(c: (validConfiguration?)): finite_set[variable] =
+   union(labels(append(c`unsolved, c`solved)), dom(c`substitution))
+
+%Lemmata
+
+%–– Definitional Corollaries ––%
+labels_include_labels_unsolved: COROLLARY
+   FORALL(c: (validConfiguration?)):
+      subset?(labels(c`unsolved), labels(c))
+
+labels_include_labels_solved: COROLLARY
+   FORALL(c: (validConfiguration?)):
+      subset?(labels(c`solved), labels(c))
+
+labels_include_dom_computed_substitution: COROLLARY
+   FORALL(c: (validConfiguration?)):
+      subset?(dom(c`substitution), labels(c))
+
+%–– Rules Solve and Synt preserve labels ––%
+labels_Solve: LEMMA
+   FORALL(c: (validConfiguration?) | match_Sol_conf?(c)):
+      labels(Solve(c)) = labels(c)
+
+labels_Synt: LEMMA
+   FORALL(c: (validConfiguration?) | match_Synt_conf?(c)):
+      labels(Synt(c)) = labels(c)
+
+%–– Rules DecF and DecP add new labels ––%
+labels_DecF: LEMMA
+   FORALL(c: (validConfiguration?) | match_DecF_conf?(c)):
+      labels(DecF(c)) = add(car(DecF(c)`unsolved)`label, labels(c))
+
+labels_DecP: LEMMA
+   FORALL(c: (validConfiguration?) | match_DecP_conf?(c)):
+      labels(DecP(c)) = add(car(cdr(DecP(c)`unsolved))`label, add(car(DecP(c)`unsolved)`label, labels(c)))
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Initial Configuration
+%—————————————————————————————————————————————————————————————————————%
+
+%Definitions
+
+initial_configuration?(c: (validConfiguration?)): bool =
+   null?(c`solved) AND null?(c`substitution)
+
+%Lemmata
+
+labels_initial_configuration: LEMMA
+   FORALL(c: (initial_configuration?)):
+      labels(c) = labels(c`unsolved)
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Lateral Substitutions
+%—————————————————————————————————————————————————————————————————————%
+
+%Definitions
+
+left_substitution(c: (validConfiguration?)): (nice?) =
+   build_subs_left(append(c`unsolved, c`solved))
+
+right_substitution(c: (validConfiguration?)): (nice?) =
+   build_subs_right(append(c`unsolved, c`solved))
+
+%Lemmata
+
+left_substitution_initial_configuration: COROLLARY
+   FORALL(c: (initial_configuration?)):
+      left_substitution(c) = build_subs_left(c`unsolved)
+
+right_substitution_initial_configuration: COROLLARY
+   FORALL(c: (initial_configuration?)):
+      right_substitution(c) = build_subs_right(c`unsolved)
+
+left_substitution_unsolved_part: COROLLARY
+   FORALL(c: (validConfiguration?), X: (labels(c`unsolved))):
+      subs(left_substitution(c))(X) = subs(build_subs_left(c`unsolved))(X)
+
+left_substitution_solved_part: COROLLARY
+   FORALL(c: (validConfiguration?), X: (labels(c`solved))):
+      subs(left_substitution(c))(X) = subs(build_subs_left(c`solved))(X)
+
+right_substitution_unsolved_part: COROLLARY
+   FORALL(c: (validConfiguration?), X: (labels(c`unsolved))):
+      subs(right_substitution(c))(X) = subs(build_subs_right(c`unsolved))(X)
+
+right_substitution_solved_part: COROLLARY
+   FORALL(c: (validConfiguration?), X: (labels(c`solved))):
+      subs(right_substitution(c))(X) = subs(build_subs_right(c`solved))(X)
+
+%–– Lateral Substitutions for rule applications ––%
+left_substitution_solve: LEMMA
+   FORALL(c: (match_Sol_conf?), X: (labels(append(Solve(c)`unsolved, Solve(c)`solved)))):
+      subs(left_substitution(Solve(c)))(X) = subs(left_substitution(c))(X)
+
+right_substitution_solve: LEMMA
+   FORALL(c: (match_Sol_conf?), X: (labels(append(Solve(c)`unsolved, Solve(c)`solved)))):
+      subs(right_substitution(Solve(c)))(X) = subs(right_substitution(c))(X)
+
+left_substitution_synt: LEMMA
+   FORALL(c: (match_Synt_conf?), X: (labels(append(Synt(c)`unsolved, Synt(c)`solved)))):
+      subs(left_substitution(Synt(c)))(X) = subs(left_substitution(c))(X)
+
+right_substitution_synt: LEMMA
+   FORALL(c: (match_Synt_conf?), X: (labels(append(Synt(c)`unsolved, Synt(c)`solved)))):
+      subs(right_substitution(Synt(c)))(X) = subs(right_substitution(c))(X)
+
+left_substitution_DecF: LEMMA
+   FORALL(c: (match_DecF_conf?), X: (labels(append(DecF(c)`unsolved, DecF(c)`solved)))):
+      LET
+         Y = (car(DecF(c)`unsolved))`label,
+	 s = arg(car(c`unsolved)`lhs)
+      IN
+         subs(left_substitution(DecF(c)))(X) = subs(cons((Y, s), left_substitution(c)))(X)
+
+right_substitution_DecF: LEMMA
+   FORALL(c: (match_DecF_conf?), X: (labels(append(DecF(c)`unsolved, DecF(c)`solved)))):
+      LET
+         Y = (car(DecF(c)`unsolved))`label,
+	 t = arg(car(c`unsolved)`rhs)
+      IN
+         subs(right_substitution(DecF(c)))(X) = subs(cons((Y, t), right_substitution(c)))(X)
+
+left_substitution_DecP: LEMMA
+   FORALL(c: (match_DecP_conf?), X: (labels(append(DecP(c)`unsolved, DecP(c)`solved)))):
+      LET
+         Y = (car(DecP(c)`unsolved))`label,
+	 Z = (car(cdr(DecP(c)`unsolved)))`label,
+	 s = term1(car(c`unsolved)`lhs),
+	 u = term2(car(c`unsolved)`lhs)
+      IN
+         subs(left_substitution(DecP(c)))(X) = subs(cons((Y, s), cons((Z, u), left_substitution(c))))(X)
+
+right_substitution_DecP: LEMMA
+   FORALL(c: (match_DecP_conf?), X: (labels(append(DecP(c)`unsolved, DecP(c)`solved)))):
+      LET
+         Y = (car(DecP(c)`unsolved))`label,
+	 Z = (car(cdr(DecP(c)`unsolved)))`label,
+	 t = term1(car(c`unsolved)`rhs),
+	 v = term2(car(c`unsolved)`rhs)
+      IN
+         subs(right_substitution(DecP(c)))(X) = subs(cons((Y, t), cons((Z, v), right_substitution(c))))(X)
+
+%–– Lateral Substitutions do not change new labels ––%
+left_substitution_new_label_old_conf_DecF: LEMMA
+   FORALL(c: (match_DecF_conf?)):
+      LET
+         Y = (car(DecF(c)`unsolved))`label
+      IN
+         subs(left_substitution(c))(Y) = variable(Y)
+
+right_substitution_new_label_old_conf_DecF: LEMMA
+   FORALL(c: (match_DecF_conf?)):
+      LET
+         Y = (car(DecF(c)`unsolved))`label
+      IN
+         subs(right_substitution(c))(Y) = variable(Y)
+
+left_substitution_new_label_old_conf_DecP: LEMMA
+   FORALL(c: (match_DecP_conf?)):
+      LET
+         Y = (car(DecP(c)`unsolved))`label,
+	 Z = (car(cdr(DecP(c)`unsolved)))`label
+      IN
+         subs(left_substitution(c))(Y) = variable(Y) AND
+	    subs(left_substitution(c))(Z) = variable(Z)
+
+right_substitution_new_label_old_conf_DecP: LEMMA
+   FORALL(c: (match_DecP_conf?)):
+      LET
+         Y = (car(DecP(c)`unsolved))`label,
+	 Z = (car(cdr(DecP(c)`unsolved)))`label
+      IN
+         subs(right_substitution(c))(Y) = variable(Y) AND
+	    subs(right_substitution(c))(Z) = variable(Z)
+
+%–– Lateral Substitutions for rules ––%
+
+lateral_subs_Solve: LEMMA
+   FORALL(c: (match_Sol_conf?)):
+      IF
+         AUT_repeated_in?(car(c`unsolved), c`solved)
+      THEN
+         left_substitution(Solve(c)) = cdr(left_substitution(c)) AND
+            right_substitution(Solve(c)) = cdr(right_substitution(c))
+      ELSE
+         left_substitution(Solve(c)) = append(build_subs_left(cdr(c`unsolved)), build_subs_left(cons(car(c`unsolved), c`solved))) AND
+            right_substitution(Solve(c)) = append(build_subs_right(cdr(c`unsolved)), build_subs_right(cons(car(c`unsolved), c`solved)))
+      ENDIF
+
+lateral_subs_Synt: LEMMA
+   FORALL(c: (match_Synt_conf?)):
+      left_substitution(Synt(c)) = cdr(left_substitution(c)) AND
+         right_substitution(Synt(c)) = cdr(right_substitution(c))
+
+lateral_subs_DecF: LEMMA
+   FORALL(c: (match_DecF_conf?)):
+      LET
+         Y = (car(DecF(c)`unsolved))`label,
+	 s = arg(car(c`unsolved)`lhs),
+	 t = arg(car(c`unsolved)`rhs)
+      IN
+         left_substitution(DecF(c)) = cons((Y, s), cdr(left_substitution(c))) AND
+	    right_substitution(DecF(c)) = cons((Y, t), cdr(right_substitution(c)))
+
+lateral_subs_DecP: LEMMA
+   FORALL(c: (match_DecP_conf?)):
+      LET
+         Y = (car(DecP(c)`unsolved))`label,
+	 Z = (car(cdr(DecP(c)`unsolved)))`label,
+	 s = term1(car(c`unsolved)`lhs),
+	 u = term2(car(c`unsolved)`lhs),
+	 t = term1(car(c`unsolved)`rhs),
+	 v = term2(car(c`unsolved)`rhs)
+      IN
+         left_substitution(DecP(c)) = cons((Y, s), cons((Z, u), cdr(left_substitution(c)))) AND
+	    right_substitution(DecP(c)) = cons((Y, t), cons((Z, v), cdr(right_substitution(c))))
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Protected Variables
+%—————————————————————————————————————————————————————————————————————%
+
+%Definitions
+
+protected_variables(c: (validConfiguration?)): finite_set[variable] =
+   union(vars(append(c`unsolved, c`solved)), difference(vars(img(c`substitution)), labels(append(c`unsolved, c`solved))))
+
+%Lemmata
+
+%–– Definitional Corollaries ––%
+protected_variables_initial_configuration: COROLLARY
+   FORALL(c_i: (initial_configuration?)):
+      protected_variables(c_i) = vars(c_i`unsolved)
+
+%–– Protected Variables and Labels are disjoint ––%
+protected_variables_are_protected: LEMMA
+   FORALL(c: (validConfiguration?)):
+      disjoint?(labels(c), protected_variables(c))
+
+protected_variables_computed_substitution: COROLLARY
+   FORALL(c: (validConfiguration?), X: (protected_variables(c))):
+      subs(c`substitution)(X) = variable(X)
+
+protected_variables_left_substitution: COROLLARY
+   FORALL(c: (validConfiguration?), X: (protected_variables(c))):
+      subs(left_substitution(c))(X) = variable(X)
+
+protected_variables_right_substitution: COROLLARY
+   FORALL(c: (validConfiguration?), X: (protected_variables(c))):
+      subs(right_substitution(c))(X) = variable(X)
+
+protected_variables_computed_substitution_term: COROLLARY
+   FORALL(c: (validConfiguration?), t: first_order_term):
+      subset?(vars(t), protected_variables(c)) IMPLIES
+         subs(c`substitution)(t) = t
+
+protected_variables_left_substitution_term: COROLLARY
+   FORALL(c: (validConfiguration?), t: first_order_term):
+      subset?(vars(t), protected_variables(c)) IMPLIES
+         subs(left_substitution(c))(t) = t
+
+protected_variables_right_substitution_term: COROLLARY
+   FORALL(c: (validConfiguration?), t: first_order_term ):
+      subset?(vars(t), protected_variables(c)) IMPLIES
+         subs(right_substitution(c))(t) = t
+
+%–– Rules preserve Protected Variables ––%
+protected_variables_Solve: LEMMA
+   FORALL(c: (validConfiguration?) | match_Sol_conf?(c)):
+      protected_variables(Solve(c)) = protected_variables(c)
+
+protected_variables_Synt: LEMMA
+   FORALL(c: (validConfiguration?) | match_Synt_conf?(c)):
+      protected_variables(Synt(c)) = protected_variables(c)
+
+protected_variables_DecF: LEMMA
+   FORALL(c: (validConfiguration?) | match_DecF_conf?(c)):
+      protected_variables(DecF(c)) = protected_variables(c)
+
+protected_variables_DecP: LEMMA
+   FORALL(c: (validConfiguration?) | match_DecP_conf?(c)):
+      protected_variables(DecP(c)) = protected_variables(c)
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Antiunify Derivation
+%—————————————————————————————————————————————————————————————————————%
+
+%Definitions
+
+%–– Rule predicates ––%
+DecF?(c, c_p: (validConfiguration?)): bool =
+   match_DecF_conf?(c) AND
+      DecF(c) = c_p
+
+DecP?(c, c_p: (validConfiguration?)): bool =
+   match_DecP_conf?(c) AND
+      DecP(c) = c_p
+
+Synt?(c, c_p: (validConfiguration?)): bool =
+   match_Synt_conf?(c) AND
+      Synt(c) = c_p
+
+Solve?(c, c_p: (validConfiguration?)): bool =
+   match_Sol_conf?(c) AND
+      Solve(c) = c_p
+
+%–– Antiunify predicate ––%
+Antiunify?(c, c_p: (validConfiguration?)): bool =
+   DecF?(c, c_p) OR
+   DecP?(c, c_p) OR
+   Synt?(c, c_p) OR
+   Solve?(c, c_p)
+
+%–– Intermediate Configuration predicate ––%
+Intermediate?(c, c_p: (validConfiguration?))(c_pp: (validConfiguration?)): bool =
+   RTC(Antiunify?)(c, c_pp) AND
+      RTC(Antiunify?)(c_pp, c_p)
+
+%–– Definitional Corollaries ––%
+antiunify_cons: COROLLARY
+   FORALL(c, c_p: (validConfiguration?)):
+      Antiunify?(c, c_p) IMPLIES cons?(c`unsolved)
+
+antiunify_union: COROLLARY
+   Antiunify? = union(DecF?, union(DecP?, union(Synt?, Solve?)))
+
+antiunify_decomposition: COROLLARY
+   subset?(DecF?, Antiunify?) AND
+      subset?(DecP?, Antiunify?) AND
+         subset?(Synt?, Antiunify?) AND
+	    subset?(Solve?, Antiunify?)
+
+antiunify_composition: COROLLARY %I did not find any result in any theory that explicitly said that without using quantifiers over individuals.
+   RTC(Antiunify?) o RTC(Antiunify?) = RTC(Antiunify?)
+
+antiunify_derivation_rules: COROLLARY
+   subset?(RTC(Antiunify?) o DecF?, RTC(Antiunify?)) AND
+      subset?(RTC(Antiunify?) o DecP?, RTC(Antiunify?)) AND
+         subset?(RTC(Antiunify?) o Synt?, RTC(Antiunify?)) AND
+	    subset?(RTC(Antiunify?) o Solve?, RTC(Antiunify?))
+
+antiunify_derivation_rules2: COROLLARY
+   subset?(DecF? o RTC(Antiunify?), RTC(Antiunify?)) AND
+      subset?(DecP? o RTC(Antiunify?), RTC(Antiunify?)) AND
+         subset?(Synt? o RTC(Antiunify?), RTC(Antiunify?)) AND
+	    subset?(Solve? o RTC(Antiunify?), RTC(Antiunify?))
+
+antiunify_derivation_rules3: COROLLARY
+   subset?(RTC(Antiunify?) o Antiunify?, RTC(Antiunify?)) AND
+      subset?(Antiunify? o RTC(Antiunify?), RTC(Antiunify?))
+
+%–– Antiunify is derivable ––%
+antiunify_derivation_equivalence: THEOREM
+   FORALL(c: (validConfiguration?)):
+      RTC(Antiunify?)(c, antiunify(c))
+
+%–– Labels are preserved ––%
+antiunify_derivation_labels: COROLLARY
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p)):
+      subset?(labels(c), labels(c_p))
+
+antiunify_derivation_domains_computed_substitutions: COROLLARY
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p)):
+      subset?(dom(c`substitution), dom(c_p`substitution))
+
+%–– Protected variables are invariant ––%
+antiunify_protected_variables: THEOREM
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p)):
+      protected_variables(c_p) = protected_variables(c)
+
+antiunify_protected_variables_antiunify: COROLLARY
+   FORALL(c: (validConfiguration?)):
+      protected_variables(antiunify(c)) = protected_variables(c)
+
+antiunify_protected_variables_initial: COROLLARY
+   FORALL(c_i: (initial_configuration?), c: (validConfiguration?) | RTC(Antiunify?)(c_i, c)):
+      protected_variables(c) = vars(c_i`unsolved)
+
+antiunify_protected_variables_computed_substitution: COROLLARY
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p), X: (protected_variables(c))):
+      subs(c_p`substitution)(X) = variable(X)
+
+antiunify_protected_variables_left_substitution: COROLLARY
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p), X: (protected_variables(c))):
+      subs(left_substitution(c_p))(X) = variable(X)
+
+antiunify_protected_variables_right_substitution: COROLLARY
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p), X: (protected_variables(c))):
+      subs(right_substitution(c_p))(X) = variable(X)
+
+antiunify_protected_variables_computed_substitution_term: COROLLARY
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p), t: first_order_term):
+      subset?(vars(t), protected_variables(c)) IMPLIES
+         subs(c_p`substitution)(t) = t
+
+antiunify_protected_variables_left_substitution_term: COROLLARY
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p), t: first_order_term):
+      subset?(vars(t), protected_variables(c)) IMPLIES
+         subs(left_substitution(c_p))(t) = t
+
+antiunify_protected_variables_right_substitution_term: COROLLARY
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p), t: first_order_term):
+      subset?(vars(t), protected_variables(c)) IMPLIES
+         subs(right_substitution(c_p))(t) = t
+
+%–– Solved AUTs are preserved ––%
+antiunify_solved_AUTs: COROLLARY
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p)):
+      suffix?(c`solved, c_p`solved)
+
+antiunify_preserves_solved_AUTs_labels_and_variables: COROLLARY
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p)):
+      subset?(labels(c`solved), labels(c_p`solved)) AND
+         subset?(vars(c`solved), vars(c_p`solved))
+
+%—– Intermediate configuration —–%
+intermediate_configuration_transitivity: COROLLARY
+   FORALL(c1, c2, c3, c4: (validConfiguration?)):
+       Intermediate?(c1, c2)(c3) AND
+         RTC(Antiunify?)(c2, c4) IMPLIES
+	    Intermediate?(c1, c4)(c3)
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Preservation of Unsolved Part
+%—————————————————————————————————————————————————————————————————————%
+
+preservation_unsolved_part: LEMMA
+   FORALL(c: (validConfiguration?), X: (labels(c`unsolved))):
+      LET
+         eq = makeAUT(
+	                subs(append(left_substitution(c), c`substitution))(X),
+		        subs(append(right_substitution(c), c`substitution))(X),
+		        X
+		     ),
+	 eq_p = makeAUT(
+	                  subs(build_subs_left(c`unsolved))(X),
+			  subs(build_subs_right(c`unsolved))(X),
+			  X
+		       )
+      IN
+         eq = eq_p AND
+	    member(eq, c`unsolved)
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Preservation of Solved Part
+%—————————————————————————————————————————————————————————————————————%
+
+preservation_solved_part: LEMMA
+   FORALL(c: (validConfiguration?), X: (labels(c`solved))):
+      LET
+         eq = makeAUT(
+	                subs(append(left_substitution(c), c`substitution))(X),
+			subs(append(right_substitution(c), c`substitution))(X),
+			X
+		     ),
+	 eq_p = makeAUT(
+	                  subs(build_subs_left(c`solved))(X),
+			  subs(build_subs_right(c`solved))(X),
+			  X
+		       )
+      IN
+         eq = eq_p AND
+	    member(eq, c`solved)
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Technical Lemmata
+%—————————————————————————————————————————————————————————————————————%
+
+%–– Auxiliary lemmata for DecF ––%
+new_labels_DecF_not_in_range_computed_substitution: LEMMA
+   FORALL(c: (match_DecF_conf?), X: (dom(c`substitution))):
+      NOT member(car(DecF(c)`unsolved)`label, vars(subs(c`substitution)(X)))
+
+action_left_substitution_DecF_over_computed_substitution: LEMMA
+   FORALL(c: (match_DecF_conf?), t: first_order_term):
+      LET
+         Y = (car(c`unsolved))`label,
+	 s = car(c`unsolved)`lhs
+      IN
+         subset?(vars(t), vars(img(c`substitution))) IMPLIES
+	    subs(append(left_substitution(DecF(c)), cons((Y, app(sym(s), variable(freshLabel(c)))), null)))(t) =
+	       subs(left_substitution(c))(t)
+
+action_right_substitution_DecF_over_computed_substitution: LEMMA
+   FORALL(c: (match_DecF_conf?), t: first_order_term):
+      LET
+         Y = (car(c`unsolved))`label,
+	 s = car(c`unsolved)`rhs
+      IN
+         subset?(vars(t), vars(img(c`substitution))) IMPLIES
+	    subs(append(right_substitution(DecF(c)), cons((Y, app(sym(s), variable(freshLabel(c)))), null)))(t) =
+	       subs(right_substitution(c))(t)
+
+%–– DecF composition ––%
+lateral_substitutions_computed_substitution_DecF: COROLLARY
+   FORALL(c: (match_DecF_conf?), X: (dom(c`substitution))):
+      subs(append(left_substitution(DecF(c)), DecF(c)`substitution))(X) =
+         subs(append(left_substitution(c), c`substitution))(X) AND
+            subs(append(right_substitution(DecF(c)), DecF(c)`substitution))(X) =
+	       subs(append(right_substitution(c), c`substitution))(X)
+
+%–– Auxiliary lemmata for DecP ––%
+new_labels_DecP_not_in_range_computed_substitution: LEMMA
+   FORALL(c: (match_DecP_conf?), X: (dom(c`substitution))):
+      NOT member(car(DecP(c)`unsolved)`label, vars(subs(c`substitution)(X))) AND
+         NOT member(car(cdr(DecP(c)`unsolved))`label, vars(subs(c`substitution)(X)))
+
+action_left_substitution_DecP_over_computed_substitution: LEMMA
+   FORALL(c: (match_DecP_conf?), t: first_order_term):
+      LET
+         Y = (car(c`unsolved))`label,
+	 freshV = freshLabel(c),
+	 freshV_p = freshLabel(union(vars(c), singleton(freshV)))
+      IN
+         subset?(vars(t), vars(img(c`substitution))) IMPLIES
+	    subs(append(left_substitution(DecP(c)), cons((Y, pair(variable(freshV), variable(freshV_p))), null)))(t) =
+	       subs(left_substitution(c))(t)
+
+action_right_substitution_DecP_over_computed_substitution: LEMMA
+   FORALL(c: (match_DecP_conf?), t: first_order_term):
+      LET
+         Y = (car(c`unsolved))`label,
+	 freshV = freshLabel(c),
+	 freshV_p = freshLabel(union(vars(c), singleton(freshV)))
+      IN
+         subset?(vars(t), vars(img(c`substitution))) IMPLIES
+	    subs(append(right_substitution(DecP(c)), cons((Y, pair(variable(freshV), variable(freshV_p))), null)))(t) =
+	       subs(right_substitution(c))(t)
+
+%–– DecP composition ––%
+lateral_substitutions_computed_substitution_DecP: LEMMA
+   FORALL(c: (match_DecP_conf?), X: (dom(c`substitution))):
+      subs(append(left_substitution(DecP(c)), DecP(c)`substitution))(X) =
+         subs(append(left_substitution(c), c`substitution))(X) AND
+            subs(append(right_substitution(DecP(c)), DecP(c)`substitution))(X) =
+	       subs(append(right_substitution(c), c`substitution))(X)
+
+%–– Auxiliary lemmata for Synt ––%
+action_left_substitution_Synt_over_computed_substitution: LEMMA
+   FORALL(c: (match_Synt_conf?), t: first_order_term):
+      LET
+         Y = (car(c`unsolved))`label,
+	 s = car(c`unsolved)`lhs
+      IN
+         subset?(vars(t), vars(img(c`substitution))) IMPLIES
+	    subs(append(left_substitution(Synt(c)), cons((Y, s) , null)))(t) =
+	       subs(left_substitution(c))(t)
+
+action_right_substitution_Synt_over_computed_substitution: LEMMA
+   FORALL(c: (match_Synt_conf?), t: first_order_term):
+      LET
+         Y = (car(c`unsolved))`label,
+	 s = car(c`unsolved)`lhs
+      IN
+         subset?(vars(t), vars(img(c`substitution))) IMPLIES
+	    subs(append(right_substitution(Synt(c)), cons((Y, s) , null)))(t) =
+	       subs(right_substitution(c))(t)
+
+%–– Synt composition ––%
+lateral_substitutions_computed_substitution_Synt: COROLLARY
+   FORALL(c: (match_Synt_conf?), X: (dom(c`substitution))):
+      subs(append(left_substitution(Synt(c)), Synt(c)`substitution))(X) =
+         subs(append(left_substitution(c), c`substitution))(X) AND
+            subs(append(right_substitution(Synt(c)), Synt(c)`substitution))(X) =
+	       subs(append(right_substitution(c), c`substitution))(X)
+
+%–– Auxiliary lemmata for Solve ––%
+action_left_substitution_Solve_over_computed_substitution: LEMMA
+   FORALL(c: (match_Sol_conf?), t: first_order_term):
+      IF
+         AUT_repeated_in?(car(c`unsolved), c`solved)
+      THEN
+         LET
+            Y = (car(c`unsolved))`label,
+	    rep_AUT = rep_AUT_in(cons(car(c`unsolved), c`solved)) 
+         IN
+            subset?(vars(t), vars(img(c`substitution))) IMPLIES
+	       subs(append(left_substitution(Solve(c)), cons((Y, variable(rep_AUT`label)) , null)))(t) =
+	          subs(left_substitution(c))(t)
+      ELSE
+         subset?(vars(t), vars(img(c`substitution))) IMPLIES
+	    subs(left_substitution(Solve(c)))(t) =
+	       subs(left_substitution(c))(t)
+      ENDIF
+
+action_right_substitution_Solve_over_computed_substitution: LEMMA
+   FORALL(c: (match_Sol_conf?), t: first_order_term):
+      IF
+         AUT_repeated_in?(car(c`unsolved), c`solved)
+      THEN
+         LET
+            Y = (car(c`unsolved))`label,
+	    rep_AUT = rep_AUT_in(cons(car(c`unsolved), c`solved)) 
+         IN
+            subset?(vars(t), vars(img(c`substitution))) IMPLIES
+	       subs(append(right_substitution(Solve(c)), cons((Y, variable(rep_AUT`label)) , null)))(t) =
+	          subs(right_substitution(c))(t)
+      ELSE
+         subset?(vars(t), vars(img(c`substitution))) IMPLIES
+	    subs(right_substitution(Solve(c)))(t) =
+	       subs(right_substitution(c))(t)
+      ENDIF
+
+%–– Solve composition ––%
+lateral_substitutions_computed_substitution_Solve: COROLLARY
+   FORALL(c: (match_Sol_conf?), X: (dom(c`substitution))):
+      subs(append(left_substitution(Solve(c)), Solve(c)`substitution))(X) =
+         subs(append(left_substitution(c), c`substitution))(X) AND
+            subs(append(right_substitution(Solve(c)), Solve(c)`substitution))(X) =
+	       subs(append(right_substitution(c), c`substitution))(X)
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Invariance of Extended Problems
+%—————————————————————————————————————————————————————————————————————%
+
+lateral_substitutions_computed_substitution_antiunify: THEOREM
+   FORALL(c: (validConfiguration?), c_p: (validConfiguration?) | RTC(Antiunify?)(c, c_p), X: (dom(c`substitution))):
+      subs(append(left_substitution(c_p), c_p`substitution))(X) =
+         subs(append(left_substitution(c), c`substitution))(X) AND
+            subs(append(right_substitution(c_p), c_p`substitution))(X) =
+	       subs(append(right_substitution(c), c`substitution))(X)
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Action of Computed Substitution
+%—————————————————————————————————————————————————————————————————————%
+
+%–– Solved Trace ––%
+antiunify_solved_history: LEMMA
+   FORALL(c_i: (initial_configuration?), c: (validConfiguration?) | RTC(Antiunify?)(c_i, c), eq: AUT | member(eq, c`solved)):
+      EXISTS(c_p: (match_Sol_conf?) | Intermediate?(c_i, c)(c_p)):
+         eq = car(c_p`unsolved) AND
+            NOT AUT_repeated_in?(eq, c_p`solved)
+	    
+%—– History of Computation ——%
+action_computed_substitution: THEOREM %%% Proof depends on previous conjectures
+   FORALL(c_i: (initial_configuration?), c: (validConfiguration?) | RTC(Antiunify?)(c_i, c)):
+      FORALL(X: (dom(c`substitution))):
+         LET
+	    eq_u = makeAUT(
+		             subs(append(left_substitution(c), c`substitution))(X),
+			     subs(append(right_substitution(c), c`substitution))(X),
+			     X
+		          )
+	 IN
+            IF
+	       var?(subs(c`substitution)(X))
+	    THEN
+	       IF
+	          member(V(subs(c`substitution)(X)), protected_variables(c_i))
+	       THEN
+	          EXISTS(c_p: (match_Synt_conf?) | Intermediate?(c_i, c)(c_p)):
+		     eq_u = car(c_p`unsolved)
+	       ELSE
+	          LET
+	             eq_s = makeAUT(
+		                      subs(append(left_substitution(c), c`substitution))(X),
+			              subs(append(right_substitution(c), c`substitution))(X),
+			              V(subs(c`substitution)(X))
+		                   )
+	          IN
+		     EXISTS(c_p: (match_Sol_conf?) | Intermediate?(c_i, c)(c_p), c_pp: (match_Sol_conf?) | Intermediate?(c_p, c)(c_pp)):
+	                member(eq_s, c`solved) AND
+			   eq_s = car(c_p`unsolved) AND
+			      NOT AUT_repeated_in?(eq_s, c_p`solved) AND
+			         repeated_AUT?(car(c_pp`unsolved), eq_s) AND
+				    car(c_pp`unsolved)`label = X
+	       ENDIF
+	    ELSIF
+	       unit?(subs(c`substitution)(X)) OR
+		  const?(subs(c`substitution)(X))
+	    THEN
+	        EXISTS(c_p: (match_Synt_conf?) | Intermediate?(c_i, c)(c_p)):
+		  eq_u = car(c_p`unsolved)
+	    ELSIF
+	       app?(subs(c`substitution)(X))
+	    THEN
+	       EXISTS(c_p: (match_DecF_conf?) | Intermediate?(c_i, c)(c_p)):
+		  eq_u = car(c_p`unsolved)
+	    ELSE
+	       EXISTS(c_p: (match_DecP_conf?) | Intermediate?(c_i, c)(c_p)):
+		  eq_u = car(c_p`unsolved)
+	    ENDIF
+
+%—————————————————————————————————————————————————————————————————————%
+%                     Build Initial Configuration
+%—————————————————————————————————————————————————————————————————————%
+
+%%Build the initial configuration constructor discussed with Temur
+%from any given valid configuration: Detect the starting labels looking
+%at the domain of computed substitution and the labels of unsolved part
+%that were not yet transformed
+
+%—————————————————————————————————————————————————————————————————————%
+
+
+
+END antiunify_derivation
