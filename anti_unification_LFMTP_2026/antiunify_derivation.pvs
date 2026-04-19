@@ -710,16 +710,5 @@ action_computed_substitution: THEOREM %%% Proof depends on previous conjectures
 	    ENDIF
 
 %—————————————————————————————————————————————————————————————————————%
-%                     Build Initial Configuration
-%—————————————————————————————————————————————————————————————————————%
-
-%%Build the initial configuration constructor discussed with Temur
-%from any given valid configuration: Detect the starting labels looking
-%at the domain of computed substitution and the labels of unsolved part
-%that were not yet transformed
-
-%—————————————————————————————————————————————————————————————————————%
-
-
 
 END antiunify_derivation
