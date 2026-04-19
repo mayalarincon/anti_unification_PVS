@@ -660,7 +660,7 @@ antiunify_solved_history: LEMMA
             NOT AUT_repeated_in?(eq, c_p`solved)
 	    
 %—– History of Computation ——%
-action_computed_substitution: THEOREM %%% Proof depends on previous conjectures
+action_computed_substitution: THEOREM
    FORALL(c_i: (initial_configuration?), c: (validConfiguration?) | RTC(Antiunify?)(c_i, c)):
       FORALL(X: (dom(c`substitution))):
          LET
