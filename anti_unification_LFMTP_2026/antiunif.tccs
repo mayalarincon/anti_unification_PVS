@@ -1,0 +1,909 @@
+% Subtype TCC generated (at line 32, column 4) for
+    % vars(eq`lhs) ∪ vars(eq`rhs)
+    % expected type  finite_set[variable]
+  % proved - complete
+vars_TCC1: OBLIGATION
+  FORALL (eq: AUEquation):
+    is_finite[variable](∪[variable](vars(eq`lhs), vars(eq`rhs)));
+
+% Subtype TCC generated (at line 67, column 21) for  ∅
+    % expected type  finite_set[variable]
+  % proved - complete
+vars_TCC2: OBLIGATION
+  FORALL (s: List_eq): null?(s) IMPLIES is_finite[variable](∅[variable]);
+
+% Subtype TCC generated (at line 68, column 18) for  s
+    % expected type  (cons?[AUEquation])
+  % proved - complete
+vars_TCC3: OBLIGATION
+  FORALL (s: List_eq): NOT null?(s) IMPLIES cons?[AUEquation](s);
+
+% Termination TCC generated (at line 68, column 24) for  vars(cdr(s))
+  % proved - complete
+vars_TCC4: OBLIGATION
+  FORALL (s: List_eq):
+    NOT null?(s) IMPLIES <<[AUEquation](cdr[AUEquation](s), s);
+
+% Subtype TCC generated (at line 68, column 9) for
+    % vars(car(s)) ∪ vars(cdr(s))
+    % expected type  finite_set[variable]
+  % proved - complete
+vars_TCC5: OBLIGATION
+  FORALL (s: List_eq,
+          v: [{z: List_eq | <<[AUEquation](z, s)} -> finite_set[variable]]):
+    NOT null?(s) IMPLIES
+     is_finite[variable]
+         (∪[variable](vars(car[AUEquation](s)), v(cdr[AUEquation](s))));
+
+% The SUBTYPE TCC (at line 68, column 33) for
+ % term generated from vars  s
+    % expected type  (cons?[AUEquation])
+  % is subsumed by vars_TCC3
+
+% The SUBTYPE TCC (at line 79, column 21) for
+ % term generated from labels  ∅
+    % expected type  finite_set[variable]
+  % is subsumed by vars_TCC2
+
+% The SUBTYPE TCC (at line 80, column 17) for
+ % term generated from labels  s
+    % expected type  (cons?[AUEquation])
+  % is subsumed by vars_TCC3
+
+% The SUBTYPE TCC (at line 80, column 38) for
+ % term generated from labels  s
+    % expected type  (cons?[AUEquation])
+  % is subsumed by vars_TCC3
+
+% The TERMINATION TCC (at line 80, column 27) for
+ % term generated from labels  labels(cdr(s))
+  % is subsumed by vars_TCC4
+
+% Termination TCC generated (at line 144, column 32) for
+    % eq_repeated_in?(eq, cdr(s))
+  % proved - complete
+eq_repeated_in?_TCC1: OBLIGATION
+  FORALL (eq: AUEquation, s: List_eq):
+    cons?(s) AND NOT repeated_eq?(eq, car(s)) IMPLIES
+     <<[AUEquation](cdr[AUEquation](s), s);
+
+% Subtype TCC generated (at line 155, column 32) for  cdr(s)
+    % expected type  (cons?[AUEquation])
+  % proved - complete
+red_eq_in_TCC1: OBLIGATION
+  FORALL (s: (first_eq_repeated?)): cons?[AUEquation](cdr[AUEquation](s));
+
+% Subtype TCC generated (at line 157, column 19) for
+    % cons(car(s), cdr(cdr(s)))
+    % expected type  (first_eq_repeated?)
+  % proved - complete
+red_eq_in_TCC2: OBLIGATION
+  FORALL (s: (first_eq_repeated?)):
+    NOT repeated_eq?(car(s), car(cdr(s))) IMPLIES
+     first_eq_repeated?(cons[AUEquation]
+                            (car[AUEquation](s),
+                             cdr[AUEquation](cdr[AUEquation](s))));
+
+% Termination TCC generated (at line 157, column 9) for
+    % red_eq_in(cons(car(s), cdr(cdr(s))))
+  % proved - complete
+red_eq_in_TCC3: OBLIGATION
+  FORALL (s: (first_eq_repeated?)):
+    NOT repeated_eq?(car(s), car(cdr(s))) IMPLIES
+     length[AUEquation]
+         (cons[AUEquation]
+              (car[AUEquation](s), cdr[AUEquation](cdr[AUEquation](s))))
+      < length[AUEquation](s);
+
+% The SUBTYPE TCC (at line 156, column 13) for
+ % term generated from red_eq_in  cdr(s)
+    % expected type  (cons?[AUEquation])
+  % is subsumed by red_eq_in_TCC1
+
+% The SUBTYPE TCC (at line 157, column 36) for
+ % term generated from red_eq_in  cdr(s)
+    % expected type  (cons?[AUEquation])
+  % is subsumed by red_eq_in_TCC1
+
+% Subtype TCC generated (at line 170, column 51) for  s
+    % expected type  (cons?[AUEquation])
+  % proved - complete
+nonrepeated?_TCC1: OBLIGATION
+  FORALL (s: List_eq):
+    NOT length(s) <= 1 AND NOT first_eq_repeated?(s) IMPLIES
+     cons?[AUEquation](s);
+
+% Termination TCC generated (at line 170, column 34) for
+    % nonrepeated?(cdr(s))
+  % proved - complete
+nonrepeated?_TCC2: OBLIGATION
+  FORALL (s: List_eq):
+    NOT length(s) <= 1 AND NOT first_eq_repeated?(s) IMPLIES
+     <<[AUEquation](cdr[AUEquation](s), s);
+
+% The SUBTYPE TCC (at line 174, column 30) for
+ % term generated from allSolvedEqs?  s
+    % expected type  (cons?[AUEquation])
+  % is subsumed by vars_TCC3
+
+% The SUBTYPE TCC (at line 174, column 54) for
+ % term generated from allSolvedEqs?  s
+    % expected type  (cons?[AUEquation])
+  % is subsumed by vars_TCC3
+
+% The TERMINATION TCC (at line 174, column 36) for
+ % term generated from allSolvedEqs?
+    %  allSolvedEqs?(cdr(s))
+  % is subsumed by vars_TCC4
+
+% Subtype TCC generated (at line 191, column 77) for  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % proved - complete
+validity_car_conf_unsolved_TCC1: OBLIGATION
+  FORALL (c: (validConfiguration?) | cons?[AUEquation](c`unsolved)):
+    cons?[AUEquation](c`unsolved);
+
+% The SUBTYPE TCC (at line 194, column 91) for
+ % term generated from validity_cdr_conf_unsolved  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 212, column 52) for
+ % term generated from cdr_is_validConf  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% Subtype TCC generated (at line 243, column 61) for  i
+    % expected type  below[length[AUEquation](append(c`unsolved, c`solved))]
+  % proved - complete
+freshness_nth_label_TCC1: OBLIGATION
+  FORALL (c: (validConfiguration?),
+          i:
+            below[length[AUEquation](c`unsolved) +
+                   length[AUEquation](c`solved)]):
+    i < length[AUEquation](append[AUEquation](c`unsolved, c`solved));
+
+% The SUBTYPE TCC (at line 246, column 37) for
+ % term generated from freshness_car_label  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 261, column 36) for
+ % term generated from car_lbl_fresh_in_cdr  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 261, column 68) for
+ % term generated from car_lbl_fresh_in_cdr  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 264, column 36) for
+ % term generated from car_lbl_fresh_dom  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 269, column 47) for
+ % term generated from emptyness_conf_vars_with_lbls_and_fresh_variables  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 274, column 85) for
+ % term generated from emptyness_conf_supdom_with_lbls_and_fresh_variables  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 278, column 17) for
+ % term generated from emptyness_conf_supdom_with_car_lbls_and_fresh_variables  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 280, column 113) for
+ % term generated from emptyness_conf_supdom_with_car_lbls_and_fresh_variables  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 284, column 89) for
+ % term generated from emptyness_conf_var_with_lbls_decomposeFuns  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 290, column 41) for
+ % term generated from emptyness_conf_var_with_lbls_decomposePairs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 293, column 81) for
+ % term generated from emptyness_conf_var  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% The SUBTYPE TCC (at line 297, column 17) for
+ % term generated from niceness_preserv_conditions  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by validity_car_conf_unsolved_TCC1
+
+% Subtype TCC generated (at line 310, column 17) for  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % proved - complete
+niceness_preserv_conditions_decomposeFuns_TCC1: OBLIGATION
+  FORALL (c: (matchingFuns_conf?)): cons?[AUEquation](c`unsolved);
+
+% The SUBTYPE TCC (at line 318, column 18) for
+ % term generated from nice_sub_decomposeFuns  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposeFuns_TCC1
+
+% Subtype TCC generated (at line 327, column 61) for  lhs
+    % expected type  (app?)
+  % proved - complete
+uns_solv_vars_matchingFuns_conf_TCC1: OBLIGATION
+  FORALL (c: (matchingFuns_conf?), eq: AUEquation, lhs: Term, rhs: Term):
+    eq = car(c`unsolved) AND lhs = eq`lhs AND rhs = eq`rhs IMPLIES
+     app?[constant, variable, f_symbol](lhs);
+
+% Subtype TCC generated (at line 327, column 83) for  rhs
+    % expected type  (app?)
+  % proved - complete
+uns_solv_vars_matchingFuns_conf_TCC2: OBLIGATION
+  FORALL (c: (matchingFuns_conf?), eq: AUEquation, lhs: Term, rhs: Term):
+    eq = car(c`unsolved) AND lhs = eq`lhs AND rhs = eq`rhs IMPLIES
+     app?[constant, variable, f_symbol](rhs);
+
+% The SUBTYPE TCC (at line 324, column 22) for
+ % term generated from uns_solv_vars_matchingFuns_conf  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposeFuns_TCC1
+
+% The SUBTYPE TCC (at line 328, column 30) for
+ % term generated from uns_solv_vars_matchingFuns_conf  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposeFuns_TCC1
+
+% Subtype TCC generated (at line 341, column 32) for
+    % cons((eq`label, app(sym(eq`lhs), variable(lbl))), c`substitution)
+    % expected type  (nice?)
+  % proved - incomplete
+decomposeFuns_TCC1: OBLIGATION
+  FORALL (c: (matchingFuns_conf?), eq: AUEquation, lhs: Term, rhs: Term,
+          lbl: variable):
+    eq = car(c`unsolved) AND
+     lhs = eq`lhs AND rhs = eq`rhs AND lbl = freshLabel(c)
+     IMPLIES
+     nice?(cons[[variable, first_order_term[constant, variable, f_symbol]]]
+               ((eq`label,
+                 app[constant, variable, f_symbol]
+                     (sym(eq`lhs),
+                      variable[constant, variable, f_symbol](lbl))),
+                c`substitution));
+
+% Subtype TCC generated (at line 340, column 7) for
+    % c
+    %   WITH [unsolved
+    %           := cons(makeEq(arg(lhs), arg(rhs), lbl), cdr(c`unsolved)),
+    %         substitution
+    %           := cons((eq`label, app(sym(eq`lhs), variable(lbl))),
+    %                   c`substitution)]
+    % expected type  {cp: (validConfiguration?) |
+                   %    cons?(cp`unsolved) AND
+                   %     cdr(c`unsolved) = cdr(cp`unsolved) AND
+                   %      subs(cp`substitution)
+                   %          (variable(car(c`unsolved)`label))
+                   %       =
+                   %       app(sym((car(c`unsolved))`lhs),
+                   %           variable(car(cp`unsolved)`label))
+                   %       AND size(cp`unsolved) < size(c`unsolved)}
+  % proved - incomplete
+decomposeFuns_TCC2: OBLIGATION
+  FORALL (c: (matchingFuns_conf?), eq: AUEquation, lhs: Term, rhs: Term,
+          lbl: variable):
+    eq = car(c`unsolved) AND
+     lhs = eq`lhs AND rhs = eq`rhs AND lbl = freshLabel(c)
+     IMPLIES
+     validConfiguration?((c
+                            WITH [unsolved
+                                    := cons[AUEquation]
+                                           (makeEq(arg[constant, variable,
+                                                       f_symbol]
+                                                       (lhs),
+                                                   arg[constant, variable,
+                                                       f_symbol]
+                                                       (rhs),
+                                                   lbl),
+                                            cdr[AUEquation](c`unsolved)),
+                                  substitution
+                                    := cons[[variable,
+                                             first_order_term
+                                                 [constant, variable,
+                                                  f_symbol]]]
+                                           ((eq`label,
+                                             app[constant, variable, f_symbol]
+                                                 (sym(eq`lhs),
+                                                  variable
+                                                      [constant, variable,
+                                                       f_symbol]
+                                                      (lbl))),
+                                            c`substitution)]))
+      AND
+      subs(cons[[variable, first_order_term[constant, variable, f_symbol]]]
+               ((eq`label,
+                 app[constant, variable, f_symbol]
+                     (sym(eq`lhs),
+                      variable[constant, variable, f_symbol](lbl))),
+                c`substitution))
+          (variable[constant, variable, f_symbol]
+               (car[AUEquation](c`unsolved)`label))
+       =
+       app[constant, variable, f_symbol]
+           (sym((car[AUEquation](c`unsolved))`lhs),
+            variable[constant, variable, f_symbol]
+                (makeEq(arg[constant, variable, f_symbol](lhs),
+                        arg[constant, variable, f_symbol](rhs), lbl)`label))
+       AND
+       size(cons[AUEquation]
+                (makeEq(arg[constant, variable, f_symbol](lhs),
+                        arg[constant, variable, f_symbol](rhs), lbl),
+                 cdr[AUEquation](c`unsolved)))
+        < size(c`unsolved);
+
+% The SUBTYPE TCC (at line 331, column 48) for
+ % term generated from decomposeFuns  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposeFuns_TCC1
+
+% The SUBTYPE TCC (at line 332, column 79) for
+ % term generated from decomposeFuns  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposeFuns_TCC1
+
+% The SUBTYPE TCC (at line 333, column 48) for
+ % term generated from decomposeFuns  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposeFuns_TCC1
+
+% The SUBTYPE TCC (at line 336, column 18) for
+ % term generated from decomposeFuns  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposeFuns_TCC1
+
+% The SUBTYPE TCC (at line 340, column 46) for
+ % term generated from decomposeFuns  lhs
+    % expected type  (app?)
+  % is subsumed by uns_solv_vars_matchingFuns_conf_TCC1
+
+% The SUBTYPE TCC (at line 340, column 55) for
+ % term generated from decomposeFuns  rhs
+    % expected type  (app?)
+  % is subsumed by uns_solv_vars_matchingFuns_conf_TCC2
+
+% The SUBTYPE TCC (at line 340, column 70) for
+ % term generated from decomposeFuns  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposeFuns_TCC1
+
+% Subtype TCC generated (at line 351, column 18) for  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % proved - complete
+niceness_preserv_conditions_decomposePairs_TCC1: OBLIGATION
+  FORALL (c: (matchingPairs_conf?)): cons?[AUEquation](c`unsolved);
+
+% The SUBTYPE TCC (at line 361, column 20) for
+ % term generated from nice_sub_decomposePairs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposePairs_TCC1
+
+% Subtype TCC generated (at line 372, column 64) for  lhs
+    % expected type  (pair?)
+  % proved - complete
+uns_solv_vars_matchingPairs_conf_TCC1: OBLIGATION
+  FORALL (c: (matchingPairs_conf?), eq: AUEquation, lhs: Term, rhs: Term):
+    eq = car(c`unsolved) AND lhs = eq`lhs AND rhs = eq`rhs IMPLIES
+     pair?[constant, variable, f_symbol](lhs);
+
+% Subtype TCC generated (at line 372, column 88) for  rhs
+    % expected type  (pair?)
+  % proved - complete
+uns_solv_vars_matchingPairs_conf_TCC2: OBLIGATION
+  FORALL (c: (matchingPairs_conf?), eq: AUEquation, lhs: Term, rhs: Term):
+    eq = car(c`unsolved) AND lhs = eq`lhs AND rhs = eq`rhs IMPLIES
+     pair?[constant, variable, f_symbol](rhs);
+
+% The SUBTYPE TCC (at line 369, column 23) for
+ % term generated from uns_solv_vars_matchingPairs_conf  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposePairs_TCC1
+
+% The SUBTYPE TCC (at line 373, column 33) for
+ % term generated from uns_solv_vars_matchingPairs_conf  lhs
+    % expected type  (pair?)
+  % is subsumed by uns_solv_vars_matchingPairs_conf_TCC1
+
+% The SUBTYPE TCC (at line 373, column 57) for
+ % term generated from uns_solv_vars_matchingPairs_conf  rhs
+    % expected type  (pair?)
+  % is subsumed by uns_solv_vars_matchingPairs_conf_TCC2
+
+% The SUBTYPE TCC (at line 374, column 32) for
+ % term generated from uns_solv_vars_matchingPairs_conf  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposePairs_TCC1
+
+% Subtype TCC generated (at line 388, column 32) for
+    % cons((eq`label, pair(variable(lbl1), variable(lbl2))), c`substitution)
+    % expected type  (nice?)
+  % proved - incomplete
+decomposePairs_TCC1: OBLIGATION
+  FORALL (c: (matchingPairs_conf?), eq: AUEquation, lhs: Term, rhs: Term,
+          lbl1: variable, lbl2: variable):
+         (eq = car(c`unsolved)) AND (lhs = eq`lhs) AND (rhs = eq`rhs)
+     AND (lbl1 = freshLabel(c))
+     AND (lbl2 = freshLabel(union(vars(c), singleton(lbl1))))
+     IMPLIES
+     nice?(cons[[variable, first_order_term[constant, variable, f_symbol]]]
+               ((eq`label,
+                 pair[constant, variable, f_symbol]
+                     (variable[constant, variable, f_symbol](lbl1),
+                      variable[constant, variable, f_symbol](lbl2))),
+                c`substitution));
+
+% Subtype TCC generated (at line 386, column 7) for
+    % c
+    %   WITH [unsolved
+    %           := cons(makeEq(term1(lhs), term1(rhs), lbl1),
+    %                   cons(makeEq(term2(lhs), term2(rhs), lbl2),
+    %                        cdr(c`unsolved))),
+    %         substitution
+    %           := cons((eq`label, pair(variable(lbl1), variable(lbl2))),
+    %                   c`substitution)]
+    % expected type  {cp: (validConfiguration?) |
+                   %         cons?(cp`unsolved) AND cons?(cdr(cp`unsolved))
+                   %     AND (cdr(cdr(cp`unsolved)) = cdr(c`unsolved))
+                   %     AND (subs(cp`substitution)
+                   %              (variable(car(c`unsolved)`label))
+                   %           =
+                   %           pair(variable(car(cp`unsolved)`label),
+                   %                variable(car(cdr(cp`unsolved))`label)))
+                   %     AND (size(cp`unsolved) < size(c`unsolved))}
+  % proved - incomplete
+decomposePairs_TCC2: OBLIGATION
+  FORALL (c: (matchingPairs_conf?), eq: AUEquation, lhs: Term, rhs: Term,
+          lbl1: variable, lbl2: variable):
+         (eq = car(c`unsolved)) AND (lhs = eq`lhs) AND (rhs = eq`rhs)
+     AND (lbl1 = freshLabel(c))
+     AND (lbl2 = freshLabel(union(vars(c), singleton(lbl1))))
+     IMPLIES
+     validConfiguration?((c
+                            WITH [unsolved
+                                    := cons[AUEquation]
+                                           (makeEq(term1[constant, variable,
+                                                         f_symbol]
+                                                       (lhs),
+                                                   term1[constant, variable,
+                                                         f_symbol]
+                                                       (rhs),
+                                                   lbl1),
+                                            cons[AUEquation]
+                                                (makeEq(term2[constant,
+                                                              variable,
+                                                              f_symbol]
+                                                            (lhs),
+                                                        term2[constant,
+                                                              variable,
+                                                              f_symbol]
+                                                            (rhs),
+                                                        lbl2),
+                                                 cdr[AUEquation](c`unsolved))),
+                                  substitution
+                                    := cons[[variable,
+                                             first_order_term
+                                                 [constant, variable,
+                                                  f_symbol]]]
+                                           ((eq`label,
+                                             pair[constant, variable, f_symbol]
+                                                 (variable
+                                                      [constant, variable,
+                                                       f_symbol]
+                                                      (lbl1),
+                                                  variable
+                                                      [constant, variable,
+                                                       f_symbol]
+                                                      (lbl2))),
+                                            c`substitution)]))
+      AND
+      subs(cons[[variable, first_order_term[constant, variable, f_symbol]]]
+               ((eq`label,
+                 pair[constant, variable, f_symbol]
+                     (variable[constant, variable, f_symbol](lbl1),
+                      variable[constant, variable, f_symbol](lbl2))),
+                c`substitution))
+          (variable[constant, variable, f_symbol]
+               (car[AUEquation](c`unsolved)`label))
+       =
+       pair[constant, variable, f_symbol]
+           (variable[constant, variable, f_symbol]
+                (makeEq(term1[constant, variable, f_symbol](lhs),
+                        term1[constant, variable, f_symbol](rhs), lbl1)`label),
+            variable[constant, variable, f_symbol]
+                (makeEq(term2[constant, variable, f_symbol](lhs),
+                        term2[constant, variable, f_symbol](rhs), lbl2)`label))
+       AND
+       size(cons[AUEquation]
+                (makeEq(term1[constant, variable, f_symbol](lhs),
+                        term1[constant, variable, f_symbol](rhs), lbl1),
+                 cons[AUEquation]
+                     (makeEq(term2[constant, variable, f_symbol](lhs),
+                             term2[constant, variable, f_symbol](rhs), lbl2),
+                      cdr[AUEquation](c`unsolved))))
+        < size(c`unsolved);
+
+% The SUBTYPE TCC (at line 378, column 100) for
+ % term generated from decomposePairs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposePairs_TCC1
+
+% The SUBTYPE TCC (at line 379, column 79) for
+ % term generated from decomposePairs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposePairs_TCC1
+
+% The SUBTYPE TCC (at line 383, column 17) for
+ % term generated from decomposePairs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposePairs_TCC1
+
+% The SUBTYPE TCC (at line 386, column 47) for
+ % term generated from decomposePairs  lhs
+    % expected type  (pair?)
+  % is subsumed by uns_solv_vars_matchingPairs_conf_TCC1
+
+% The SUBTYPE TCC (at line 386, column 58) for
+ % term generated from decomposePairs  rhs
+    % expected type  (pair?)
+  % is subsumed by uns_solv_vars_matchingPairs_conf_TCC2
+
+% The SUBTYPE TCC (at line 387, column 52) for
+ % term generated from decomposePairs  lhs
+    % expected type  (pair?)
+  % is subsumed by uns_solv_vars_matchingPairs_conf_TCC1
+
+% The SUBTYPE TCC (at line 387, column 63) for
+ % term generated from decomposePairs  rhs
+    % expected type  (pair?)
+  % is subsumed by uns_solv_vars_matchingPairs_conf_TCC2
+
+% The SUBTYPE TCC (at line 387, column 79) for
+ % term generated from decomposePairs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by niceness_preserv_conditions_decomposePairs_TCC1
+
+% Subtype TCC generated (at line 399, column 17) for  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % proved - complete
+nice_sub_trivialSyn_Eqs_TCC1: OBLIGATION
+  FORALL (c: (syntacticallyEq_conf?)): cons?[AUEquation](c`unsolved);
+
+% Subtype TCC generated (at line 408, column 33) for
+    % cons((eq`label, lhs), c`substitution)
+    % expected type  (nice?)
+  % proved - complete
+trivialSyn_Eqs_TCC1: OBLIGATION
+  FORALL (c: (syntacticallyEq_conf?), eq: AUEquation, lhs: Term):
+    eq = car(c`unsolved) AND lhs = eq`lhs IMPLIES
+     nice?(cons[[variable, Term]]((eq`label, lhs), c`substitution));
+
+% Subtype TCC generated (at line 407, column 10) for
+    % c
+    %   WITH [unsolved := cdr(c`unsolved),
+    %         substitution := cons((eq`label, lhs), c`substitution)]
+    % expected type  {cp: (validConfiguration?) |
+                   %    subs(cp`substitution)
+                   %        (variable(car(c`unsolved)`label))
+                   %     = car(c`unsolved)`lhs
+                   %     AND size(cp`unsolved) < size(c`unsolved)}
+  % proved - incomplete
+trivialSyn_Eqs_TCC2: OBLIGATION
+  FORALL (c: (syntacticallyEq_conf?), eq: AUEquation, lhs: Term):
+    eq = car(c`unsolved) AND lhs = eq`lhs IMPLIES
+     validConfiguration?((c
+                            WITH [unsolved := cdr[AUEquation](c`unsolved),
+                                  substitution
+                                    := cons[[variable, Term]]
+                                           ((eq`label, lhs), c`substitution)]))
+      AND
+      subs(cons[[variable, Term]]((eq`label, lhs), c`substitution))
+          (variable[constant, variable, f_symbol]
+               (car[AUEquation](c`unsolved)`label))
+       = car[AUEquation](c`unsolved)`lhs
+       AND size(cdr[AUEquation](c`unsolved)) < size(c`unsolved);
+
+% The SUBTYPE TCC (at line 403, column 53) for
+ % term generated from trivialSyn_Eqs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_trivialSyn_Eqs_TCC1
+
+% The SUBTYPE TCC (at line 404, column 17) for
+ % term generated from trivialSyn_Eqs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_trivialSyn_Eqs_TCC1
+
+% The SUBTYPE TCC (at line 406, column 19) for
+ % term generated from trivialSyn_Eqs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_trivialSyn_Eqs_TCC1
+
+% The SUBTYPE TCC (at line 407, column 34) for
+ % term generated from trivialSyn_Eqs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_trivialSyn_Eqs_TCC1
+
+% The SUBTYPE TCC (at line 412, column 35) for
+ % term generated from syntEq_inter_vars_unsolv_labels_solv  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_trivialSyn_Eqs_TCC1
+
+% The SUBTYPE TCC (at line 420, column 17) for
+ % term generated from syntEq_car_lhs_member_img  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_trivialSyn_Eqs_TCC1
+
+% The SUBTYPE TCC (at line 424, column 17) for
+ % term generated from domain_trivialSyn_Eqs  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_trivialSyn_Eqs_TCC1
+
+% Subtype TCC generated (at line 436, column 25) for  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % proved - complete
+nice_sub_Solved_Eq_TCC1: OBLIGATION
+  FORALL (c: (SolvedEq_conf?)): cons?[AUEquation](c`unsolved);
+
+% Subtype TCC generated (at line 437, column 57) for  cons(sol_eq, c`solved)
+    % expected type  (first_eq_repeated?)
+  % proved - complete
+nice_sub_Solved_Eq_TCC2: OBLIGATION
+  FORALL (c: (SolvedEq_conf?)):
+    eq_repeated_in?(car(c`unsolved), c`solved) IMPLIES
+     FORALL (sol_eq: AUEquation):
+       sol_eq = car(c`unsolved) IMPLIES
+        first_eq_repeated?(cons[AUEquation](sol_eq, c`solved));
+
+% The SUBTYPE TCC (at line 437, column 24) for
+ % term generated from nice_sub_Solved_Eq  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_Solved_Eq_TCC1
+
+% Subtype TCC generated (at line 444, column 25) for
+    % cons((sol_eq`label, variable(red_eq`label)), c`substitution)
+    % expected type  (nice?)
+  % proved - complete
+solve_TCC1: OBLIGATION
+  FORALL (c: (SolvedEq_conf?)):
+    eq_repeated_in?(car(c`unsolved), c`solved) IMPLIES
+     FORALL (sol_eq: AUEquation, red_eq: AUEquation):
+       sol_eq = car(c`unsolved) AND red_eq = red_eq_in(cons(sol_eq, c`solved))
+        IMPLIES
+        nice?(cons[[variable, first_order_term[constant, variable, f_symbol]]]
+                  ((sol_eq`label,
+                    variable[constant, variable, f_symbol](red_eq`label)),
+                   c`substitution));
+
+% Subtype TCC generated (at line 443, column 9) for
+    % c
+    %   WITH [unsolved := cdr(c`unsolved),
+    %         substitution
+    %           := cons((sol_eq`label, variable(red_eq`label)),
+    %                   c`substitution)]
+    % expected type  {cp: (validConfiguration?) |
+                   %    size(cp`unsolved) < size(c`unsolved)}
+  % proved - incomplete
+solve_TCC2: OBLIGATION
+  FORALL (c: (SolvedEq_conf?)):
+    eq_repeated_in?(car(c`unsolved), c`solved) IMPLIES
+     FORALL (sol_eq: AUEquation, red_eq: AUEquation):
+       sol_eq = car(c`unsolved) AND red_eq = red_eq_in(cons(sol_eq, c`solved))
+        IMPLIES
+        validConfiguration?((c
+                               WITH [unsolved := cdr[AUEquation](c`unsolved),
+                                     substitution
+                                       := cons[[variable,
+                                                first_order_term
+                                                    [constant, variable,
+                                                     f_symbol]]]
+                                              ((sol_eq`label,
+                                                variable
+                                                    [constant, variable,
+                                                     f_symbol]
+                                                    (red_eq`label)),
+                                               c`substitution)]))
+         AND size(cdr[AUEquation](c`unsolved)) < size(c`unsolved);
+
+% Subtype TCC generated (at line 445, column 9) for
+    % c
+    %   WITH [unsolved := cdr(c`unsolved),
+    %         solved := cons(car(c`unsolved), c`solved)]
+    % expected type  {cp: (validConfiguration?) |
+                   %    size(cp`unsolved) < size(c`unsolved)}
+  % proved - incomplete
+solve_TCC3: OBLIGATION
+  FORALL (c: (SolvedEq_conf?)):
+    NOT eq_repeated_in?(car(c`unsolved), c`solved) IMPLIES
+     validConfiguration?((c
+                            WITH [unsolved := cdr[AUEquation](c`unsolved),
+                                  solved
+                                    := cons[AUEquation]
+                                           (car[AUEquation](c`unsolved),
+                                            c`solved)]))
+      AND size(cdr[AUEquation](c`unsolved)) < size(c`unsolved);
+
+% The SUBTYPE TCC (at line 441, column 27) for
+ % term generated from solve  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_Solved_Eq_TCC1
+
+% The SUBTYPE TCC (at line 442, column 23) for
+ % term generated from solve  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_Solved_Eq_TCC1
+
+% The SUBTYPE TCC (at line 442, column 55) for
+ % term generated from solve  cons(sol_eq, c`solved)
+    % expected type  (first_eq_repeated?)
+  % is subsumed by nice_sub_Solved_Eq_TCC2
+
+% The SUBTYPE TCC (at line 443, column 33) for
+ % term generated from solve  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_Solved_Eq_TCC1
+
+% The SUBTYPE TCC (at line 446, column 36) for
+ % term generated from solve  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_Solved_Eq_TCC1
+
+% The SUBTYPE TCC (at line 445, column 33) for
+ % term generated from solve  c`unsolved
+    % expected type  (cons?[AUEquation])
+  % is subsumed by nice_sub_Solved_Eq_TCC1
+
+% Subtype TCC generated (at line 467, column 28) for  c
+    % expected type  (SolvedEq_conf?)
+  % proved - complete
+antiunify_TCC1: OBLIGATION
+  FORALL (c: (validConfiguration?)):
+    cons?(c`unsolved) AND
+     NOT matchingFuns_conf?(c) AND
+      NOT matchingPairs_conf?(c) AND NOT syntacticallyEq_conf?(c)
+     IMPLIES SolvedEq_conf?(c);
+
+% The TERMINATION TCC (at line 459, column 12) for
+ % term generated from antiunify
+    %  antiunify(decomposeFuns(c))
+  % was not generated because it simplifies to TRUE.
+
+% The TERMINATION TCC (at line 462, column 12) for
+ % term generated from antiunify
+    %  antiunify(decomposePairs(c))
+  % was not generated because it simplifies to TRUE.
+
+% The TERMINATION TCC (at line 465, column 12) for
+ % term generated from antiunify
+    %  antiunify(trivialSyn_Eqs(c))
+  % was not generated because it simplifies to TRUE.
+
+% The TERMINATION TCC (at line 467, column 12) for
+ % term generated from antiunify  antiunify(solve(c))
+  % was not generated because it simplifies to TRUE.
+
+% Subtype TCC generated (at line 487, column 54) for  eqs
+    % expected type  (cons?[AUEquation])
+  % proved - complete
+build_subs_left_TCC1: OBLIGATION
+  FORALL (eqs: (validEqs?)):
+    NOT null?(eqs) IMPLIES
+     FORALL (feq: AUEquation): feq = car(eqs) IMPLIES cons?[AUEquation](eqs);
+
+% Subtype TCC generated (at line 487, column 50) for  cdr(eqs)
+    % expected type  (validEqs?)
+  % proved - complete
+build_subs_left_TCC2: OBLIGATION
+  FORALL (eqs: (validEqs?)):
+    NOT null?(eqs) IMPLIES
+     FORALL (feq: AUEquation):
+       feq = car(eqs) IMPLIES validEqs?(cdr[AUEquation](eqs));
+
+% Termination TCC generated (at line 487, column 34) for
+    % build_subs_left(cdr(eqs))
+  % proved - complete
+build_subs_left_TCC3: OBLIGATION
+  FORALL (eqs: (validEqs?)):
+    NOT null?(eqs) IMPLIES
+     FORALL (feq: AUEquation):
+       feq = car(eqs) IMPLIES
+        length[AUEquation](cdr[AUEquation](eqs)) < length[AUEquation](eqs);
+
+% Subtype TCC generated (at line 486, column 21) for  eqs
+    % expected type  (cons?[AUEquation])
+  % proved - complete
+build_subs_left_TCC4: OBLIGATION
+  FORALL (eqs: (validEqs?)): NOT null?(eqs) IMPLIES cons?[AUEquation](eqs);
+
+% The SUBTYPE TCC (at line 504, column 55) for
+ % term generated from build_subs_right  eqs
+    % expected type  (cons?[AUEquation])
+  % is subsumed by build_subs_left_TCC4
+
+% The SUBTYPE TCC (at line 504, column 51) for
+ % term generated from build_subs_right  cdr(eqs)
+    % expected type  (validEqs?)
+  % is subsumed by build_subs_left_TCC2
+
+% The TERMINATION TCC (at line 504, column 34) for
+ % term generated from build_subs_right
+    %  build_subs_right(cdr(eqs))
+  % is subsumed by build_subs_left_TCC3
+
+% The SUBTYPE TCC (at line 503, column 21) for
+ % term generated from build_subs_right  eqs
+    % expected type  (cons?[AUEquation])
+  % is subsumed by build_subs_left_TCC4
+
+% Subtype TCC generated (at line 590, column 42) for  antiunify(c)`solved
+    % expected type  (validEqs?)
+  % proved - incomplete
+antiunify_solved_substitution_TCC1: OBLIGATION
+  FORALL (c: (validConfiguration?), eq: AUEquation):
+    member(eq, c`solved) IMPLIES validEqs?(antiunify(c)`solved);
+
+% The SUBTYPE TCC (at line 591, column 36) for
+ % term generated from antiunify_solved_substitution  antiunify(c)`solved
+    % expected type  (validEqs?)
+  % is subsumed by antiunify_solved_substitution_TCC1
+
+% Subtype TCC generated (at line 603, column 31) for  cf`solved
+    % expected type  (validEqs?)
+  % proved - incomplete
+antiunif_is_sound_TCC1: OBLIGATION
+  FORALL (ci: (validConfiguration?), cf: (validConfiguration?),
+          sigma: (nice?)):
+    cf = antiunify(ci) AND sigma = cf`substitution IMPLIES validEqs?(cf`solved);
+
+% Subtype TCC generated (at line 605, column 19) for  ci`unsolved
+    % expected type  (validEqs?)
+  % proved - incomplete
+antiunif_is_sound_TCC2: OBLIGATION
+  FORALL (ci: (validConfiguration?), cf: (validConfiguration?), sigma: (nice?),
+          rho_l: sub, rho_r: sub):
+    cf = antiunify(ci) AND
+     sigma = cf`substitution AND
+      rho_l = build_subs_left(cf`solved) AND
+       rho_r = build_subs_right(cf`solved)
+     IMPLIES validEqs?(ci`unsolved);
+
+% Subtype TCC generated (at line 605, column 39) for  rho_l
+    % expected type  (nice?)
+  % proved - incomplete
+antiunif_is_sound_TCC3: OBLIGATION
+  FORALL (ci: (validConfiguration?), cf: (validConfiguration?), sigma: (nice?),
+          rho_l: sub, rho_r: sub):
+    cf = antiunify(ci) AND
+     sigma = cf`substitution AND
+      rho_l = build_subs_left(cf`solved) AND
+       rho_r = build_subs_right(cf`solved)
+     IMPLIES nice?(rho_l);
+
+% Subtype TCC generated (at line 605, column 46) for  rho_r
+    % expected type  (nice?)
+  % proved - incomplete
+antiunif_is_sound_TCC4: OBLIGATION
+  FORALL (ci: (validConfiguration?), cf: (validConfiguration?), sigma: (nice?),
+          rho_l: sub, rho_r: sub):
+    cf = antiunify(ci) AND
+     sigma = cf`substitution AND
+      rho_l = build_subs_left(cf`solved) AND
+       rho_r = build_subs_right(cf`solved)
+     IMPLIES nice?(rho_r);
+
+% The SUBTYPE TCC (at line 604, column 32) for
+ % term generated from antiunif_is_sound  cf`solved
+    % expected type  (validEqs?)
+  % is subsumed by antiunif_is_sound_TCC1
