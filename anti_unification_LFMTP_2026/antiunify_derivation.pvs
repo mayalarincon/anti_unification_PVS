@@ -17,8 +17,8 @@ BEGIN
 
   importing antiunif,
             TRS@IUnion_extra,
-	    TRS@confluence_commute,
-	    orders@relation_iterate
+	        TRS@confluence_commute,
+	        orders@relation_iterate
 	    
 
 %—————————————————————————————————————————————————————————————————————%
@@ -137,7 +137,7 @@ left_substitution_DecF: LEMMA
    FORALL(c: (match_DecF_conf?), X: (labels(append(DecF(c)`unsolved, DecF(c)`solved)))):
       LET
          Y = (car(DecF(c)`unsolved))`label,
-	 s = arg(car(c`unsolved)`lhs)
+	     s = arg(car(c`unsolved)`lhs)
       IN
          subs(left_substitution(DecF(c)))(X) = subs(cons((Y, s), left_substitution(c)))(X)
 
@@ -145,7 +145,7 @@ right_substitution_DecF: LEMMA
    FORALL(c: (match_DecF_conf?), X: (labels(append(DecF(c)`unsolved, DecF(c)`solved)))):
       LET
          Y = (car(DecF(c)`unsolved))`label,
-	 t = arg(car(c`unsolved)`rhs)
+	     t = arg(car(c`unsolved)`rhs)
       IN
          subs(right_substitution(DecF(c)))(X) = subs(cons((Y, t), right_substitution(c)))(X)
 
@@ -153,9 +153,9 @@ left_substitution_DecP: LEMMA
    FORALL(c: (match_DecP_conf?), X: (labels(append(DecP(c)`unsolved, DecP(c)`solved)))):
       LET
          Y = (car(DecP(c)`unsolved))`label,
-	 Z = (car(cdr(DecP(c)`unsolved)))`label,
-	 s = term1(car(c`unsolved)`lhs),
-	 u = term2(car(c`unsolved)`lhs)
+	     Z = (car(cdr(DecP(c)`unsolved)))`label,
+	     s = term1(car(c`unsolved)`lhs),
+	     u = term2(car(c`unsolved)`lhs)
       IN
          subs(left_substitution(DecP(c)))(X) = subs(cons((Y, s), cons((Z, u), left_substitution(c))))(X)
 
@@ -163,9 +163,9 @@ right_substitution_DecP: LEMMA
    FORALL(c: (match_DecP_conf?), X: (labels(append(DecP(c)`unsolved, DecP(c)`solved)))):
       LET
          Y = (car(DecP(c)`unsolved))`label,
-	 Z = (car(cdr(DecP(c)`unsolved)))`label,
-	 t = term1(car(c`unsolved)`rhs),
-	 v = term2(car(c`unsolved)`rhs)
+	     Z = (car(cdr(DecP(c)`unsolved)))`label,
+	     t = term1(car(c`unsolved)`rhs),
+	     v = term2(car(c`unsolved)`rhs)
       IN
          subs(right_substitution(DecP(c)))(X) = subs(cons((Y, t), cons((Z, v), right_substitution(c))))(X)
 
@@ -188,19 +188,19 @@ left_substitution_new_label_old_conf_DecP: LEMMA
    FORALL(c: (match_DecP_conf?)):
       LET
          Y = (car(DecP(c)`unsolved))`label,
-	 Z = (car(cdr(DecP(c)`unsolved)))`label
+	     Z = (car(cdr(DecP(c)`unsolved)))`label
       IN
          subs(left_substitution(c))(Y) = variable(Y) AND
-	    subs(left_substitution(c))(Z) = variable(Z)
+	        subs(left_substitution(c))(Z) = variable(Z)
 
 right_substitution_new_label_old_conf_DecP: LEMMA
    FORALL(c: (match_DecP_conf?)):
       LET
          Y = (car(DecP(c)`unsolved))`label,
-	 Z = (car(cdr(DecP(c)`unsolved)))`label
+	     Z = (car(cdr(DecP(c)`unsolved)))`label
       IN
          subs(right_substitution(c))(Y) = variable(Y) AND
-	    subs(right_substitution(c))(Z) = variable(Z)
+	        subs(right_substitution(c))(Z) = variable(Z)
 
 %–– Lateral Substitutions for rules ––%
 
@@ -225,24 +225,24 @@ lateral_subs_DecF: LEMMA
    FORALL(c: (match_DecF_conf?)):
       LET
          Y = (car(DecF(c)`unsolved))`label,
-	 s = arg(car(c`unsolved)`lhs),
-	 t = arg(car(c`unsolved)`rhs)
+	     s = arg(car(c`unsolved)`lhs),
+	     t = arg(car(c`unsolved)`rhs)
       IN
          left_substitution(DecF(c)) = cons((Y, s), cdr(left_substitution(c))) AND
-	    right_substitution(DecF(c)) = cons((Y, t), cdr(right_substitution(c)))
+	        right_substitution(DecF(c)) = cons((Y, t), cdr(right_substitution(c)))
 
 lateral_subs_DecP: LEMMA
    FORALL(c: (match_DecP_conf?)):
       LET
          Y = (car(DecP(c)`unsolved))`label,
-	 Z = (car(cdr(DecP(c)`unsolved)))`label,
-	 s = term1(car(c`unsolved)`lhs),
-	 u = term2(car(c`unsolved)`lhs),
-	 t = term1(car(c`unsolved)`rhs),
-	 v = term2(car(c`unsolved)`rhs)
+	     Z = (car(cdr(DecP(c)`unsolved)))`label,
+	     s = term1(car(c`unsolved)`lhs),
+	     u = term2(car(c`unsolved)`lhs),
+	     t = term1(car(c`unsolved)`rhs),
+	     v = term2(car(c`unsolved)`rhs)
       IN
          left_substitution(DecP(c)) = cons((Y, s), cons((Z, u), cdr(left_substitution(c)))) AND
-	    right_substitution(DecP(c)) = cons((Y, t), cons((Z, v), cdr(right_substitution(c))))
+	        right_substitution(DecP(c)) = cons((Y, t), cons((Z, v), cdr(right_substitution(c))))
 
 %—————————————————————————————————————————————————————————————————————%
 %                     Protected Variables
@@ -335,9 +335,9 @@ Solve?(c, c_p: (validConfiguration?)): bool =
 %–– Antiunify predicate ––%
 Antiunify?(c, c_p: (validConfiguration?)): bool =
    DecF?(c, c_p) OR
-   DecP?(c, c_p) OR
-   Synt?(c, c_p) OR
-   Solve?(c, c_p)
+      DecP?(c, c_p) OR
+         Synt?(c, c_p) OR
+            Solve?(c, c_p)
 
 %–– Intermediate Configuration predicate ––%
 Intermediate?(c, c_p: (validConfiguration?))(c_pp: (validConfiguration?)): bool =
@@ -356,7 +356,7 @@ antiunify_decomposition: COROLLARY
    subset?(DecF?, Antiunify?) AND
       subset?(DecP?, Antiunify?) AND
          subset?(Synt?, Antiunify?) AND
-	    subset?(Solve?, Antiunify?)
+	        subset?(Solve?, Antiunify?)
 
 antiunify_composition: COROLLARY %I did not find any result in any theory that explicitly said that without using quantifiers over individuals.
    RTC(Antiunify?) o RTC(Antiunify?) = RTC(Antiunify?)
@@ -365,13 +365,13 @@ antiunify_derivation_rules: COROLLARY
    subset?(RTC(Antiunify?) o DecF?, RTC(Antiunify?)) AND
       subset?(RTC(Antiunify?) o DecP?, RTC(Antiunify?)) AND
          subset?(RTC(Antiunify?) o Synt?, RTC(Antiunify?)) AND
-	    subset?(RTC(Antiunify?) o Solve?, RTC(Antiunify?))
+	        subset?(RTC(Antiunify?) o Solve?, RTC(Antiunify?))
 
 antiunify_derivation_rules2: COROLLARY
    subset?(DecF? o RTC(Antiunify?), RTC(Antiunify?)) AND
       subset?(DecP? o RTC(Antiunify?), RTC(Antiunify?)) AND
          subset?(Synt? o RTC(Antiunify?), RTC(Antiunify?)) AND
-	    subset?(Solve? o RTC(Antiunify?), RTC(Antiunify?))
+	        subset?(Solve? o RTC(Antiunify?), RTC(Antiunify?))
 
 antiunify_derivation_rules3: COROLLARY
    subset?(RTC(Antiunify?) o Antiunify?, RTC(Antiunify?)) AND
@@ -460,14 +460,14 @@ preservation_unsolved_part: LEMMA
 		        subs(append(right_substitution(c), c`substitution))(X),
 		        X
 		     ),
-	 eq_p = makeAUT(
+	     eq_p = makeAUT(
 	                  subs(build_subs_left(c`unsolved))(X),
 			  subs(build_subs_right(c`unsolved))(X),
 			  X
 		       )
       IN
          eq = eq_p AND
-	    member(eq, c`unsolved)
+	       member(eq, c`unsolved)
 
 %—————————————————————————————————————————————————————————————————————%
 %                     Preservation of Solved Part
@@ -481,14 +481,14 @@ preservation_solved_part: LEMMA
 			subs(append(right_substitution(c), c`substitution))(X),
 			X
 		     ),
-	 eq_p = makeAUT(
+	     eq_p = makeAUT(
 	                  subs(build_subs_left(c`solved))(X),
 			  subs(build_subs_right(c`solved))(X),
 			  X
 		       )
       IN
          eq = eq_p AND
-	    member(eq, c`solved)
+	        member(eq, c`solved)
 
 %—————————————————————————————————————————————————————————————————————%
 %                     Technical Lemmata
@@ -503,21 +503,21 @@ action_left_substitution_DecF_over_computed_substitution: LEMMA
    FORALL(c: (match_DecF_conf?), t: first_order_term):
       LET
          Y = (car(c`unsolved))`label,
-	 s = car(c`unsolved)`lhs
+	     s = car(c`unsolved)`lhs
       IN
          subset?(vars(t), vars(img(c`substitution))) IMPLIES
-	    subs(append(left_substitution(DecF(c)), cons((Y, app(sym(s), variable(freshLabel(c)))), null)))(t) =
-	       subs(left_substitution(c))(t)
+	        subs(append(left_substitution(DecF(c)), cons((Y, app(sym(s), variable(freshLabel(c)))), null)))(t) =
+	           subs(left_substitution(c))(t)
 
 action_right_substitution_DecF_over_computed_substitution: LEMMA
    FORALL(c: (match_DecF_conf?), t: first_order_term):
       LET
          Y = (car(c`unsolved))`label,
-	 s = car(c`unsolved)`rhs
+	     s = car(c`unsolved)`rhs
       IN
          subset?(vars(t), vars(img(c`substitution))) IMPLIES
-	    subs(append(right_substitution(DecF(c)), cons((Y, app(sym(s), variable(freshLabel(c)))), null)))(t) =
-	       subs(right_substitution(c))(t)
+	        subs(append(right_substitution(DecF(c)), cons((Y, app(sym(s), variable(freshLabel(c)))), null)))(t) =
+	           subs(right_substitution(c))(t)
 
 %–– DecF composition ––%
 lateral_substitutions_computed_substitution_DecF: COROLLARY
@@ -525,7 +525,7 @@ lateral_substitutions_computed_substitution_DecF: COROLLARY
       subs(append(left_substitution(DecF(c)), DecF(c)`substitution))(X) =
          subs(append(left_substitution(c), c`substitution))(X) AND
             subs(append(right_substitution(DecF(c)), DecF(c)`substitution))(X) =
-	       subs(append(right_substitution(c), c`substitution))(X)
+	           subs(append(right_substitution(c), c`substitution))(X)
 
 %–– Auxiliary lemmata for DecP ––%
 new_labels_DecP_not_in_range_computed_substitution: LEMMA
@@ -537,23 +537,23 @@ action_left_substitution_DecP_over_computed_substitution: LEMMA
    FORALL(c: (match_DecP_conf?), t: first_order_term):
       LET
          Y = (car(c`unsolved))`label,
-	 freshV = freshLabel(c),
-	 freshV_p = freshLabel(union(vars(c), singleton(freshV)))
+	     freshV = freshLabel(c),
+	     freshV_p = freshLabel(union(vars(c), singleton(freshV)))
       IN
          subset?(vars(t), vars(img(c`substitution))) IMPLIES
-	    subs(append(left_substitution(DecP(c)), cons((Y, pair(variable(freshV), variable(freshV_p))), null)))(t) =
-	       subs(left_substitution(c))(t)
+	        subs(append(left_substitution(DecP(c)), cons((Y, pair(variable(freshV), variable(freshV_p))), null)))(t) =
+	           subs(left_substitution(c))(t)
 
 action_right_substitution_DecP_over_computed_substitution: LEMMA
    FORALL(c: (match_DecP_conf?), t: first_order_term):
       LET
          Y = (car(c`unsolved))`label,
-	 freshV = freshLabel(c),
-	 freshV_p = freshLabel(union(vars(c), singleton(freshV)))
+	     freshV = freshLabel(c),
+	     freshV_p = freshLabel(union(vars(c), singleton(freshV)))
       IN
          subset?(vars(t), vars(img(c`substitution))) IMPLIES
-	    subs(append(right_substitution(DecP(c)), cons((Y, pair(variable(freshV), variable(freshV_p))), null)))(t) =
-	       subs(right_substitution(c))(t)
+	        subs(append(right_substitution(DecP(c)), cons((Y, pair(variable(freshV), variable(freshV_p))), null)))(t) =
+	          subs(right_substitution(c))(t)
 
 %–– DecP composition ––%
 lateral_substitutions_computed_substitution_DecP: LEMMA
@@ -561,28 +561,28 @@ lateral_substitutions_computed_substitution_DecP: LEMMA
       subs(append(left_substitution(DecP(c)), DecP(c)`substitution))(X) =
          subs(append(left_substitution(c), c`substitution))(X) AND
             subs(append(right_substitution(DecP(c)), DecP(c)`substitution))(X) =
-	       subs(append(right_substitution(c), c`substitution))(X)
+	           subs(append(right_substitution(c), c`substitution))(X)
 
 %–– Auxiliary lemmata for Synt ––%
 action_left_substitution_Synt_over_computed_substitution: LEMMA
    FORALL(c: (match_Synt_conf?), t: first_order_term):
       LET
          Y = (car(c`unsolved))`label,
-	 s = car(c`unsolved)`lhs
+	     s = car(c`unsolved)`lhs
       IN
          subset?(vars(t), vars(img(c`substitution))) IMPLIES
-	    subs(append(left_substitution(Synt(c)), cons((Y, s) , null)))(t) =
-	       subs(left_substitution(c))(t)
+	        subs(append(left_substitution(Synt(c)), cons((Y, s) , null)))(t) =
+	           subs(left_substitution(c))(t)
 
 action_right_substitution_Synt_over_computed_substitution: LEMMA
    FORALL(c: (match_Synt_conf?), t: first_order_term):
       LET
          Y = (car(c`unsolved))`label,
-	 s = car(c`unsolved)`lhs
+	     s = car(c`unsolved)`lhs
       IN
          subset?(vars(t), vars(img(c`substitution))) IMPLIES
-	    subs(append(right_substitution(Synt(c)), cons((Y, s) , null)))(t) =
-	       subs(right_substitution(c))(t)
+	        subs(append(right_substitution(Synt(c)), cons((Y, s) , null)))(t) =
+	           subs(right_substitution(c))(t)
 
 %–– Synt composition ––%
 lateral_substitutions_computed_substitution_Synt: COROLLARY
@@ -590,7 +590,7 @@ lateral_substitutions_computed_substitution_Synt: COROLLARY
       subs(append(left_substitution(Synt(c)), Synt(c)`substitution))(X) =
          subs(append(left_substitution(c), c`substitution))(X) AND
             subs(append(right_substitution(Synt(c)), Synt(c)`substitution))(X) =
-	       subs(append(right_substitution(c), c`substitution))(X)
+	           subs(append(right_substitution(c), c`substitution))(X)
 
 %–– Auxiliary lemmata for Solve ––%
 action_left_substitution_Solve_over_computed_substitution: LEMMA
@@ -600,15 +600,15 @@ action_left_substitution_Solve_over_computed_substitution: LEMMA
       THEN
          LET
             Y = (car(c`unsolved))`label,
-	    rep_AUT = rep_AUT_in(cons(car(c`unsolved), c`solved)) 
+	        rep_AUT = rep_AUT_in(cons(car(c`unsolved), c`solved)) 
          IN
             subset?(vars(t), vars(img(c`substitution))) IMPLIES
-	       subs(append(left_substitution(Solve(c)), cons((Y, variable(rep_AUT`label)) , null)))(t) =
-	          subs(left_substitution(c))(t)
+	           subs(append(left_substitution(Solve(c)), cons((Y, variable(rep_AUT`label)) , null)))(t) =
+	              subs(left_substitution(c))(t)
       ELSE
          subset?(vars(t), vars(img(c`substitution))) IMPLIES
-	    subs(left_substitution(Solve(c)))(t) =
-	       subs(left_substitution(c))(t)
+	        subs(left_substitution(Solve(c)))(t) =
+	           subs(left_substitution(c))(t)
       ENDIF
 
 action_right_substitution_Solve_over_computed_substitution: LEMMA
@@ -618,15 +618,15 @@ action_right_substitution_Solve_over_computed_substitution: LEMMA
       THEN
          LET
             Y = (car(c`unsolved))`label,
-	    rep_AUT = rep_AUT_in(cons(car(c`unsolved), c`solved)) 
+	        rep_AUT = rep_AUT_in(cons(car(c`unsolved), c`solved)) 
          IN
             subset?(vars(t), vars(img(c`substitution))) IMPLIES
-	       subs(append(right_substitution(Solve(c)), cons((Y, variable(rep_AUT`label)) , null)))(t) =
-	          subs(right_substitution(c))(t)
+	           subs(append(right_substitution(Solve(c)), cons((Y, variable(rep_AUT`label)) , null)))(t) =
+	              subs(right_substitution(c))(t)
       ELSE
          subset?(vars(t), vars(img(c`substitution))) IMPLIES
-	    subs(right_substitution(Solve(c)))(t) =
-	       subs(right_substitution(c))(t)
+	        subs(right_substitution(Solve(c)))(t) =
+	           subs(right_substitution(c))(t)
       ENDIF
 
 %–– Solve composition ––%
@@ -635,7 +635,7 @@ lateral_substitutions_computed_substitution_Solve: COROLLARY
       subs(append(left_substitution(Solve(c)), Solve(c)`substitution))(X) =
          subs(append(left_substitution(c), c`substitution))(X) AND
             subs(append(right_substitution(Solve(c)), Solve(c)`substitution))(X) =
-	       subs(append(right_substitution(c), c`substitution))(X)
+	           subs(append(right_substitution(c), c`substitution))(X)
 
 %—————————————————————————————————————————————————————————————————————%
 %                     Invariance of Extended Problems
@@ -646,7 +646,7 @@ lateral_substitutions_computed_substitution_antiunify: THEOREM
       subs(append(left_substitution(c_p), c_p`substitution))(X) =
          subs(append(left_substitution(c), c`substitution))(X) AND
             subs(append(right_substitution(c_p), c_p`substitution))(X) =
-	       subs(append(right_substitution(c), c`substitution))(X)
+	           subs(append(right_substitution(c), c`substitution))(X)
 
 %—————————————————————————————————————————————————————————————————————%
 %                     Action of Computed Substitution
@@ -664,50 +664,50 @@ action_computed_substitution: THEOREM
    FORALL(c_i: (initial_configuration?), c: (validConfiguration?) | RTC(Antiunify?)(c_i, c)):
       FORALL(X: (dom(c`substitution))):
          LET
-	    eq_u = makeAUT(
-		             subs(append(left_substitution(c), c`substitution))(X),
-			     subs(append(right_substitution(c), c`substitution))(X),
-			     X
-		          )
-	 IN
+	        eq_u = makeAUT(
+		              subs(append(left_substitution(c), c`substitution))(X),
+			          subs(append(right_substitution(c), c`substitution))(X),
+			          X
+		              )
+	     IN
             IF
-	       var?(subs(c`substitution)(X))
-	    THEN
-	       IF
-	          member(V(subs(c`substitution)(X)), protected_variables(c_i))
-	       THEN
-	          EXISTS(c_p: (match_Synt_conf?) | Intermediate?(c_i, c)(c_p)):
-		     eq_u = car(c_p`unsolved)
-	       ELSE
-	          LET
-	             eq_s = makeAUT(
-		                      subs(append(left_substitution(c), c`substitution))(X),
-			              subs(append(right_substitution(c), c`substitution))(X),
-			              V(subs(c`substitution)(X))
-		                   )
-	          IN
-		     EXISTS(c_p: (match_Sol_conf?) | Intermediate?(c_i, c)(c_p), c_pp: (match_Sol_conf?) | Intermediate?(c_p, c)(c_pp)):
-	                member(eq_s, c`solved) AND
-			   eq_s = car(c_p`unsolved) AND
-			      NOT AUT_repeated_in?(eq_s, c_p`solved) AND
-			         repeated_AUT?(car(c_pp`unsolved), eq_s) AND
-				    car(c_pp`unsolved)`label = X
-	       ENDIF
-	    ELSIF
-	       unit?(subs(c`substitution)(X)) OR
-		  const?(subs(c`substitution)(X))
-	    THEN
-	        EXISTS(c_p: (match_Synt_conf?) | Intermediate?(c_i, c)(c_p)):
-		  eq_u = car(c_p`unsolved)
-	    ELSIF
-	       app?(subs(c`substitution)(X))
-	    THEN
-	       EXISTS(c_p: (match_DecF_conf?) | Intermediate?(c_i, c)(c_p)):
-		  eq_u = car(c_p`unsolved)
-	    ELSE
-	       EXISTS(c_p: (match_DecP_conf?) | Intermediate?(c_i, c)(c_p)):
-		  eq_u = car(c_p`unsolved)
-	    ENDIF
+	           var?(subs(c`substitution)(X))
+	        THEN
+	           IF
+	              member(V(subs(c`substitution)(X)), protected_variables(c_i))
+	           THEN
+	              EXISTS(c_p: (match_Synt_conf?) | Intermediate?(c_i, c)(c_p)):
+		             eq_u = car(c_p`unsolved)
+	           ELSE
+	              LET
+	                 eq_s = makeAUT(
+		                     subs(append(left_substitution(c), c`substitution))(X),
+			                 subs(append(right_substitution(c), c`substitution))(X),
+			                 V(subs(c`substitution)(X))
+		                     )
+	              IN
+		             EXISTS(c_p: (match_Sol_conf?) | Intermediate?(c_i, c)(c_p), c_pp: (match_Sol_conf?) | Intermediate?(c_p, c)(c_pp)):
+	                   member(eq_s, c`solved) AND
+			              eq_s = car(c_p`unsolved) AND
+			                 NOT AUT_repeated_in?(eq_s, c_p`solved) AND
+			                    repeated_AUT?(car(c_pp`unsolved), eq_s) AND
+				                   car(c_pp`unsolved)`label = X
+	           ENDIF
+	        ELSIF
+	           unit?(subs(c`substitution)(X)) OR
+		          const?(subs(c`substitution)(X))
+	        THEN
+	           EXISTS(c_p: (match_Synt_conf?) | Intermediate?(c_i, c)(c_p)):
+		          eq_u = car(c_p`unsolved)
+	        ELSIF
+	           app?(subs(c`substitution)(X))
+	        THEN
+	           EXISTS(c_p: (match_DecF_conf?) | Intermediate?(c_i, c)(c_p)):
+		          eq_u = car(c_p`unsolved)
+	        ELSE
+	           EXISTS(c_p: (match_DecP_conf?) | Intermediate?(c_i, c)(c_p)):
+		          eq_u = car(c_p`unsolved)
+	        ENDIF
 
 %—————————————————————————————————————————————————————————————————————%
 
